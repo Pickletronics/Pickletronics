@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'StartGame/startGameView.dart';
 
 void main() {
   runApp(const MyApp());
@@ -73,16 +74,11 @@ class _MyHomePageState extends State<MyHomePage> {
           // the App.build method, and use it to set our appbar title.
           title: Text(widget.title),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            Center(
-              child: ElevatedButton(
-                onPressed: startGame,
-                child: Text('Start Game'),
-              ),
-            ),
-            Center(child: Text('Recommendations')),
-            Center(child: Text('Sessions')),
+            StartGameView(),
+            const Center(child: Text('Recommendations')),
+            const Center(child: Text('Sessions')),
           ],
         ),
      bottomNavigationBar: const TabBar(
