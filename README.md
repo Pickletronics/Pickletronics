@@ -11,5 +11,6 @@ Dev tips:
 - All mobile development code should be in 'lib' folder, since we are emulating on Android we need it to be cross-compatible
 - Any iOS-specific components go in the 'ios' folder, but again should be limited as we won't be able to emulate this
 - Use flutters built-in widgets to ensure cross compatibility
-- As long as emulator is running, type 'r' in terminal to perform hot reload and view changes
+- As long as emulator is running, type 'r' in terminal to perform hot reload and view changes. This maintains the application state
+- To restart the application, type 'R' in the terminal to perform a hot restart
 
