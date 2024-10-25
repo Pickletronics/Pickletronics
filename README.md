@@ -1,4 +1,18 @@
 # Pickletronics
+Completed Work:
+- Project Setup: initialized Flutter project, set up Android Emulator for testing
+- Basic App Structure: navigation between different tabs, persistent app state
+- UI Setup: basic UI setup for 'Start Game' tab
+- CI/CD pipeline set up for an iOS build every time a change is made to main branch, using CodeMagic
+  
+Project Architecture:
+- Frontend: Flutter framework with Dart programming language
+- Backend: sqfLite (Flutter plugin for relational database management)
+- Bluetooth Communication: flutter_blue plugin to manage bluetooth connection and data transfer
+
+Known Bugs:
+- None for now
+
 Set up Dev Environment:
 1. Install Flutter in the same root directory as cloned repo
 2. Install Flutter & Dart extensions on VSCode
