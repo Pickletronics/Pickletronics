@@ -1,17 +1,18 @@
 # Pickletronics
 Completed Work:
-- Project Setup: initialized Flutter project, set up Android Emulator for testing
+- Project Setup: initialized Flutter project, set up Android Emulator for testing, bluetooth framework setup
 - Basic App Structure: navigation between different tabs, persistent app state
-- UI Setup: basic UI setup for 'Start Game' tab
+- UI Setup: basic UI setup for navigation between tabs and header display
+- Bluetooth framework: bluetooth package installed and set up on 'Start Game' page. Clicking 'Pair Device' button starts scan for bluetooth devices.
 - CI/CD pipeline set up for an iOS build every time a change is made to main branch, using CodeMagic
   
 Project Architecture:
 - Frontend: Flutter framework with Dart programming language
 - Backend: sqfLite (Flutter plugin for relational database management)
-- Bluetooth Communication: flutter_blue plugin to manage bluetooth connection and data transfer
+- Bluetooth Communication: flutter_blue_plus plugin to manage bluetooth connection and data transfer
 
 Known Bugs:
-- None for now
+- For the sake of testing, the bluetooth connection only works on a physical device and not an emulator. We don't yet have access to a physical device (and are still trying to set up the dev environment on a MacOS), so we have not yet been able to thoroughly test the bluetooth scanning logic. For now, when running on an emulator, the bluetooth begins scanning and the 'Pair Device' button remains disabled until a Hot Restart.
 
 Set up Dev Environment:
 1. Install Flutter in the same root directory as cloned repo
