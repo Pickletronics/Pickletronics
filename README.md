@@ -10,11 +10,10 @@ Completed Work:
   
 Project Architecture:
 - Frontend: Flutter framework with Dart programming language
-- Backend: sqfLite (Flutter plugin for relational database management)
 - Bluetooth Communication: flutter_blue_plus plugin to manage bluetooth connection and data transfer
 
 Known Bugs:
-- For the sake of testing, the bluetooth connection only works on a physical device and not an emulator. We don't yet have access to a physical device (and are still trying to set up the dev environment on a MacOS), so we have not yet been able to thoroughly test the bluetooth scanning logic. For now, when running on an emulator, the bluetooth begins scanning and the 'Pair Device' button remains disabled until a Hot Restart.
+- None
 
 Set up Dev Environment:
 1. Install Flutter in the same root directory as cloned repo
