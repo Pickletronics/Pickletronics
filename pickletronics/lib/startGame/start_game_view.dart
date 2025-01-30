@@ -52,36 +52,50 @@ class StartGameViewState extends State<StartGameView> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Center(
-            child: ElevatedButton(
-              onPressed: isScanning ? null : _startScanning,
-              child: const Text('Pair Device'),
-            ),
-          ),
-          const SizedBox(height: 20),
-          if (_devicesList.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                children: _devicesList.map((device) {
-                  return Text(
+@override
+Widget build(BuildContext context) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ElevatedButton(
+          onPressed: isScanning ? null : _startScanning,
+          child: Text(isScanning ? 'Scanning...' : 'Scan for Nearby Devices'),
+        ),
+        const SizedBox(height: 20),
+        if (_devicesList.isNotEmpty)
+          Expanded(
+            child: ListView.builder(
+              itemCount: _devicesList.length,
+              itemBuilder: (context, index) {
+                final device = _devicesList[index];
+                return ListTile(
+                  title: Text(
                     device.platformName.isNotEmpty ? device.platformName : 'Unknown Device',
                     style: const TextStyle(fontSize: 18),
-                    textAlign: TextAlign.center,
-                  );
-                }).toList(),
-              ),
+                  ),
+                  subtitle: Text('ID: ${device.remoteId}'),
+                  trailing: const Icon(Icons.bluetooth),
+                  onTap: () {
+                    _connectToDevice(device);
+                  },
+                );
+              },
             ),
-        ],
-      ),
-    );
-  }
+          )
+        else
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              'No devices found. Tap "Pair Device" to scan.',
+              style: TextStyle(fontSize: 18),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
+    ),
+  );
+}
 
   Future<void> _startScanning() async {
     await _requestPermissions();
@@ -93,8 +107,7 @@ class StartGameViewState extends State<StartGameView> {
     await FlutterBluePlus.adapterState.where((val) => val == BluetoothAdapterState.on).first;
 
     // Scan for ble devices with specific name/services
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
-
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
 
     // Wait for scanning to stop
     await FlutterBluePlus.isScanning.where((val) => val == false).first;
@@ -104,5 +117,26 @@ class StartGameViewState extends State<StartGameView> {
     });
 
     _logger.i("Scanning complete.");
+  }
+
+  Future<void> _connectToDevice(BluetoothDevice device) async {
+    try {
+      _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
+      await device.connect();
+      _logger.i('Successfully connected to ${device.platformName}');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connected to ${device.platformName}')),
+        );
+      }
+    } catch (e) {
+      _logger.e('Failed to connect: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to connect to ${device.platformName}')),
+        );
+      }
+    }
   }
 }
