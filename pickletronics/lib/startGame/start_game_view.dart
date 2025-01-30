@@ -37,9 +37,13 @@ class StartGameViewState extends State<StartGameView> {
             _devicesList.add(r.device); // Add device if not already in the list
           });
         }
-        _logger.i('${r.device.remoteId}: "${r.advertisementData.advName}" found');
+        _logger.i('Device Found:');
+        _logger.i('  Name: ${r.advertisementData.advName.isNotEmpty ? r.advertisementData.advName : "Unknown"}');
+        _logger.i('  ID: ${r.device.remoteId}');
+        _logger.i('  RSSI: ${r.rssi}');
+        _logger.i('  Advertisement Data: ${r.advertisementData.toString()}');
       }
-    }, onError: (e) => _logger.i(e));
+    }, onError: (e) => _logger.i('Error while scanning: $e'));
   }
 
   @override
@@ -89,11 +93,8 @@ class StartGameViewState extends State<StartGameView> {
     await FlutterBluePlus.adapterState.where((val) => val == BluetoothAdapterState.on).first;
 
     // Scan for ble devices with specific name/services
-    await FlutterBluePlus.startScan(
-      withServices: [Guid("")], // Match any of the specified services
-      withNames: [""], // Match any of the specified names
-      timeout: const Duration(seconds: 15),
-    );
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 10));
+
 
     // Wait for scanning to stop
     await FlutterBluePlus.isScanning.where((val) => val == false).first;
