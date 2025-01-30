@@ -20,7 +20,6 @@ class StartGameView extends StatefulWidget {
 }
 
 class StartGameViewState extends State<StartGameView> {
-  //final FlutterBluePlus _flutterBlue = FlutterBluePlus();
   final List<BluetoothDevice> _devicesList = [];
   late StreamSubscription<List<ScanResult>> _scanSubscription;
   bool isScanning = false;
@@ -32,7 +31,7 @@ class StartGameViewState extends State<StartGameView> {
     _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isNotEmpty) {
         ScanResult r = results.last; // Get the most recently found device
-        if (!_devicesList.contains(r.device)) {
+        if (!_devicesList.contains(r.device) && (r.device.platformName.isNotEmpty)) {
           setState(() {
             _devicesList.add(r.device); // Add device if not already in the list
           });
@@ -151,10 +150,18 @@ void _showDeviceModal(BluetoothDevice device) {
 Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
   try {
     _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
-    await device.connect();
+    // TODO: spinner should begin here
+    await device.connect().timeout(
+      const Duration(seconds: 10), // Set timeout duration
+      onTimeout: () {
+        throw TimeoutException('Connection timed out. Please try again.');
+      },
+    );
     _logger.i('Successfully connected to ${device.platformName}');
 
     // Discover services and characteristics
+    // only read from fef4
+    // "Dumped all sessions == done"
     List<BluetoothService> services = await device.discoverServices();
     if (services.isEmpty) {
       _showCharacteristicsDialog(device, []);
@@ -206,6 +213,4 @@ void _showCharacteristicsDialog(BluetoothDevice device, List<String> characteris
     },
   );
 }
-
-
 }
