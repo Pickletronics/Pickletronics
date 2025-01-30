@@ -77,7 +77,7 @@ Widget build(BuildContext context) {
                   subtitle: Text('ID: ${device.remoteId}'),
                   trailing: const Icon(Icons.bluetooth),
                   onTap: () {
-                    _connectToDevice(device);
+                    _showDeviceModal(device);
                   },
                 );
               },
@@ -119,24 +119,93 @@ Widget build(BuildContext context) {
     _logger.i("Scanning complete.");
   }
 
-  Future<void> _connectToDevice(BluetoothDevice device) async {
-    try {
-      _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
-      await device.connect();
-      _logger.i('Successfully connected to ${device.platformName}');
+void _showDeviceModal(BluetoothDevice device) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              device.platformName.isNotEmpty ? device.platformName : 'Unknown Device',
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context); // Close the modal
+                await _connectAndReadCharacteristics(device);
+              },
+              child: const Text('Connect'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connected to ${device.platformName}')),
-        );
-      }
-    } catch (e) {
-      _logger.e('Failed to connect: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to connect to ${device.platformName}')),
-        );
+Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
+  try {
+    _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
+    await device.connect();
+    _logger.i('Successfully connected to ${device.platformName}');
+
+    // Discover services and characteristics
+    List<BluetoothService> services = await device.discoverServices();
+    if (services.isEmpty) {
+      _showCharacteristicsDialog(device, []);
+      return;
+    }
+
+    List<String> characteristics = [];
+    for (var service in services) {
+      for (var characteristic in service.characteristics) {
+        characteristics.add(
+            'Characteristic: ${characteristic.uuid}, Properties: ${characteristic.properties}');
       }
     }
+
+    _showCharacteristicsDialog(device, characteristics);
+  } catch (e) {
+    _logger.e('Failed to connect: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to connect to ${device.platformName}')),
+      );
+    }
   }
+}
+
+void _showCharacteristicsDialog(BluetoothDevice device, List<String> characteristics) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text(device.platformName.isNotEmpty ? device.platformName : 'Unknown Device'),
+        content: characteristics.isNotEmpty
+        ? SingleChildScrollView( // Ensures the content can scroll if it's long
+            child: Text(
+              characteristics.join("\n"), // Joins characteristics into a single string
+              textAlign: TextAlign.left,  // Align text properly
+            ),
+          )
+        : const Text('No data found'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
 }
