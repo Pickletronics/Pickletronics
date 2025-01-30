@@ -1,17 +1,27 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:logger/logger.dart';
 
-class StartGameView extends StatefulWidget {
-  const StartGameView({Key? key}) : super(key: key);
+final Logger _logger = Logger();
 
-  @override
-  _StartGameViewState createState() => _StartGameViewState();
+Future<void> _requestPermissions() async {
+  await Permission.bluetoothScan.request();
+  await Permission.bluetoothConnect.request();
+  await Permission.location.request();
 }
 
-class _StartGameViewState extends State<StartGameView> {
-  final FlutterBluePlus _flutterBlue = FlutterBluePlus();
-  List<BluetoothDevice> _devicesList = [];
+class StartGameView extends StatefulWidget {
+  const StartGameView({super.key});
+
+  @override
+  StartGameViewState createState() => StartGameViewState();
+}
+
+class StartGameViewState extends State<StartGameView> {
+  //final FlutterBluePlus _flutterBlue = FlutterBluePlus();
+  final List<BluetoothDevice> _devicesList = [];
   late StreamSubscription<List<ScanResult>> _scanSubscription;
   bool isScanning = false;
 
@@ -27,9 +37,9 @@ class _StartGameViewState extends State<StartGameView> {
             _devicesList.add(r.device); // Add device if not already in the list
           });
         }
-        print('${r.device.remoteId}: "${r.advertisementData.advName}" found');
+        _logger.i('${r.device.remoteId}: "${r.advertisementData.advName}" found');
       }
-    }, onError: (e) => print(e));
+    }, onError: (e) => _logger.i(e));
   }
 
   @override
@@ -57,7 +67,7 @@ class _StartGameViewState extends State<StartGameView> {
               child: Column(
                 children: _devicesList.map((device) {
                   return Text(
-                    device.name.isNotEmpty ? device.name : 'Unknown Device',
+                    device.platformName.isNotEmpty ? device.platformName : 'Unknown Device',
                     style: const TextStyle(fontSize: 18),
                     textAlign: TextAlign.center,
                   );
@@ -70,12 +80,12 @@ class _StartGameViewState extends State<StartGameView> {
   }
 
   Future<void> _startScanning() async {
+    await _requestPermissions();
     setState(() {
       isScanning = true;
       _devicesList.clear(); // Clear previous results
     });
 
-    // TODO: program currently stuck here when emulating, must test on a physical device
     await FlutterBluePlus.adapterState.where((val) => val == BluetoothAdapterState.on).first;
 
     // Scan for ble devices with specific name/services
@@ -92,6 +102,6 @@ class _StartGameViewState extends State<StartGameView> {
       isScanning = false;
     });
 
-    print('Scanning complete.');
+    _logger.i("Scanning complete.");
   }
 }

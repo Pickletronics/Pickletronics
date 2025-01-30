@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- Required for Bluetooth scanning -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" /> <!-- Required for Bluetooth scanning (Android 12+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /> <!-- Required for Bluetooth connection (Android 12+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />

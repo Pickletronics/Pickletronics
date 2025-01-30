@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'StartGame/startGameView.dart';
+import 'StartGame/start_game_view.dart';
+import 'package:logger/logger.dart';
+
+final Logger _logger = Logger();
 
 void main() {
   runApp(const MyApp());
@@ -85,6 +88,5 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
 
 void startGame() {
   // TODO: Bluetooth pairing logic goes here
-  // ignore: avoid_print
-  print('Start Game button pressed');
+  _logger.i('Start Game button pressed');
 }
