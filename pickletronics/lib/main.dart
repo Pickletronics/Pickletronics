@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-import 'StartGame/start_game_view.dart';
 import 'package:logger/logger.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'StartGame/start_game_view.dart';
+import 'session_view.dart';
 
 final Logger _logger = Logger();
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -16,7 +23,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(200, 200, 200, 200)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(200, 200, 200, 200),
+        ),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Pickletronics'),
@@ -26,14 +35,14 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
+class _MyHomePageState extends State<MyHomePage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -44,16 +53,15 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    _tabController.dispose(); // Clean up the controller when the widget is disposed.
+    _tabController.dispose();
     super.dispose();
   }
 
   String get _appBarTitle {
-    // Check if the TabController is initialized and return the title based on the selected tab index
     if (_tabController.index == 0) return 'Welcome Back';
     if (_tabController.index == 1) return 'Improve your Game';
     if (_tabController.index == 2) return 'Previous Sessions';
-    return widget.title; // Fallback to default title
+    return widget.title;
   }
 
   @override
@@ -61,14 +69,13 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(_appBarTitle), // Set the title dynamically
+        title: Text(_appBarTitle),
       ),
       body: TabBarView(
         controller: _tabController,
         children: const [
           StartGameView(),
-          Center(child: Text('Recommendations')),
-          Center(child: Text('Sessions')),
+          SessionsView(),
         ],
       ),
       bottomNavigationBar: TabBar(
@@ -84,9 +91,4 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
       ),
     );
   }
-}
-
-void startGame() {
-  // TODO: Bluetooth pairing logic goes here
-  _logger.i('Start Game button pressed');
 }
