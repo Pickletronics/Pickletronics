@@ -1,4 +1,3 @@
-// lib/services/ble_service.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -10,9 +9,7 @@ class BleService {
 
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _characteristic;
-
   String _incomingBuffer = '';
-
   Function(String)? onTextReceived;
 
   Future<void> connectToDevice(BluetoothDevice device) async {
@@ -20,40 +17,43 @@ class BleService {
       await device.connect();
       _connectedDevice = device;
 
-      List<BluetoothService> services = await device.discoverServices();
+      var services = await device.discoverServices();
+
       for (var service in services) {
-        if (service.uuid.toString().toUpperCase().contains(SERVICE_UUID)) {
-          for (var c in service.characteristics) {
-            if (c.uuid.toString().toUpperCase().contains(CHARACTERISTIC_UUID)) {
-              _characteristic = c;
-              break;
-            }
+        for (var c in service.characteristics) {
+          if (c.uuid.toString().toUpperCase().contains(CHARACTERISTIC_UUID)) {
+            _characteristic = c;
+            await _readUntilComplete();
+            break;
           }
         }
       }
-
-      if (_characteristic == null) {
-        print('Characteristic $CHARACTERISTIC_UUID not found!');
-        await device.disconnect();
-        throw Exception('Characteristic not found');
-      }
-
-      await _characteristic!.setNotifyValue(true);
-      _characteristic!.value.listen((value) => _processData(value));
     } catch (e) {
-      print('Error connecting to device: $e');
       rethrow;
     }
   }
 
-  Future<void> requestDataFromDevice() async {
-    if (_characteristic == null) {
-      print('Cannot request data: characteristic is null!');
-      return;
+  Future<void> _readUntilComplete() async {
+    bool isDumpComplete = false;
+
+    while (!isDumpComplete && _characteristic != null) {
+      try {
+        final value = await _characteristic!.read();
+        if (value.isEmpty) continue;
+
+        _processData(value);
+
+        final chunk = utf8.decode(value);
+        if (chunk.trim() == 'Dumped all sessions.') {
+          isDumpComplete = true;
+          break;
+        }
+
+        await Future.delayed(const Duration(milliseconds: 50));
+      } catch (e) {
+        break;
+      }
     }
-    const command = 'SEND_ALL_SESSIONS\n';
-    await _characteristic!.write(command.codeUnits, withoutResponse: false);
-    print('Requested data from device...');
   }
 
   void _processData(List<int> data) {
@@ -62,11 +62,17 @@ class BleService {
 
     while (_incomingBuffer.contains('\n')) {
       final newlineIndex = _incomingBuffer.indexOf('\n');
-      final line = _incomingBuffer.substring(0, newlineIndex).trim();
+      var line = _incomingBuffer.substring(0, newlineIndex).trim();
       _incomingBuffer = _incomingBuffer.substring(newlineIndex + 1);
 
-      if (line.isNotEmpty) {
-        print('Got line: "$line"');
+      if (line.isEmpty) {
+        continue;
+      }
+
+      if (RegExp(r'^\d+$').hasMatch(line) ||
+          line.contains(',') ||
+          line == "End of file reached." ||
+          line == "Dumped all sessions.") {
         onTextReceived?.call(line);
       }
     }
@@ -79,7 +85,6 @@ class BleService {
     _connectedDevice = null;
     _characteristic = null;
     _incomingBuffer = '';
-
     sessionNotifier.resetAll();
   }
 

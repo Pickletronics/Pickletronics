@@ -1,4 +1,3 @@
-// lib/providers/session_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/session.dart';
 
@@ -6,60 +5,74 @@ class SessionNotifier extends StateNotifier<List<Session>> {
   SessionNotifier() : super([]);
 
   Session? _currentSession;
-  String? _currentSessionName;
 
-  void processIncomingLine(String line) {
-    if (line.startsWith('session') && line.endsWith('.txt')) {
+  void processIncomingLine(String rawLine) {
+    final line = rawLine.replaceAll('\r', '').trim();
+
+    if (line.isEmpty) {
+      return;
+    }
+
+    if (line == "End of file reached.") {
       if (_currentSession != null) {
-        _finalizeCurrentSession();
+        _finalizeAndSaveSession(_currentSession!);
+        _currentSession = null;
+      }
+      return;
+    }
+
+    if (RegExp(r'^\d+$').hasMatch(line)) {
+      if (_currentSession != null) {
+        _finalizeAndSaveSession(_currentSession!);
       }
       _startNewSession(line);
       return;
     }
 
-    if (line == 'end-of-file') {
-      _currentSession?.addLog(line);
-      _finalizeCurrentSession();
-      return;
-    }
-
-    if (_currentSession != null) {
+    if (line.contains(',')) {
+      if (_currentSession == null) {
+        String sessionNum = state.length.toString();
+        _startNewSession(sessionNum);
+      }
       _currentSession!.addLog(line);
     }
-  }
 
-  void _startNewSession(String sessionLine) {
-    _currentSessionName = sessionLine;
-    final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    _currentSession = Session(
-      id: sessionId,
-      startTime: DateTime.now(),
-      logs: [],
-    );
-    _currentSession!.addLog('Starting $sessionLine');
-  }
-
-  void _finalizeCurrentSession() {
-    if (_currentSession == null) return;
-
-    final finishedSession = _currentSession!;
-    finishedSession.endTime = DateTime.now();
-
-    if (finishedSession.logs.isNotEmpty &&
-        finishedSession.logs.last == 'end-of-file') {
-      state = [...state, finishedSession];
-      print('Session "${_currentSessionName ?? ""}" completed with ${finishedSession.logs.length} lines.');
-    } else {
-      print('Discarding session "${_currentSessionName ?? ""}" due to missing termination marker.');
+    if (line == "Dumped all sessions.") {
+      if (_currentSession != null) {
+        _finalizeAndSaveSession(_currentSession!);
+        _currentSession = null;
+      }
     }
+  }
 
-    _currentSession = null;
-    _currentSessionName = null;
+  void _startNewSession(String sessionNumber) {
+    _currentSession = Session(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      sessionName: sessionNumber,
+      startTime: DateTime.now(),
+      logs: [sessionNumber],
+    );
+  }
+
+  void _finalizeAndSaveSession(Session session) {
+    try {
+      session.endTime = DateTime.now();
+
+      final dataLines = session.logs.where((log) =>
+      log.contains(',') &&
+          !RegExp(r'^\d+$').hasMatch(log)
+      ).toList();
+
+      if (dataLines.isNotEmpty) {
+        state = [...state, session];
+      }
+    } catch (e, st) {
+      // Error handling can be added here if needed
+    }
   }
 
   void resetAll() {
     _currentSession = null;
-    _currentSessionName = null;
     state = [];
   }
 }
