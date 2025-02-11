@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logger/logger.dart';
 
 final Logger _logger = Logger();
+String new_final_string = '';
 
 Future<void> _requestPermissions() async {
   await Permission.bluetoothScan.request();
@@ -159,24 +162,48 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
     );
     _logger.i('Successfully connected to ${device.platformName}');
 
-    // Discover services and characteristics
-    // only read from fef4
-    // "Dumped all sessions == done"
+    // Get the correct writable directory
+    String testing = '';
+
     List<BluetoothService> services = await device.discoverServices();
     if (services.isEmpty) {
-      _showCharacteristicsDialog(device, []);
+      _showCharacteristicsDialog(device, [],'');
       return;
     }
 
     List<String> characteristics = [];
+    List<String> receivedData = [];
     for (var service in services) {
       for (var characteristic in service.characteristics) {
-        characteristics.add(
-            'Characteristic: ${characteristic.uuid}, Properties: ${characteristic.properties}');
+        if (characteristic.uuid.toString().contains('fef4')) {
+          // PERFORM CONTINUOUS READ
+          while (true) {
+          try {
+            List<int> value = await characteristic.read();
+            String stringValue = utf8.decode(value);
+            receivedData.add(stringValue);
+            await Future.sync(() {
+                  new_final_string += '\n$stringValue';
+            });
+            print('Received: $stringValue');
+
+            if (stringValue.contains('Dumped all sessions.')) {
+              print('Stopping as ALL SESSIONS DONE was received.');
+              print('Final string value: $new_final_string');
+              print('Final concatenated string:\n${receivedData.join("\n")}');
+              return;
+            }
+          } catch (e) {
+            print('Error reading characteristic: $e');
+            return;
+          }
+          await Future.delayed(Duration(milliseconds: 500));
+        }
+        }
       }
     }
 
-    _showCharacteristicsDialog(device, characteristics);
+    _showCharacteristicsDialog(device, characteristics, testing);
   } catch (e) {
     _logger.e('Failed to connect: $e');
     if (mounted) {
@@ -187,7 +214,8 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
   }
 }
 
-void _showCharacteristicsDialog(BluetoothDevice device, List<String> characteristics) {
+void _showCharacteristicsDialog(BluetoothDevice device, List<String> characteristics, String temp) {
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
