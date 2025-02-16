@@ -40,11 +40,11 @@ class StartGameViewState extends State<StartGameView> {
             _devicesList.add(r.device); // Add device if not already in the list
           });
         }
-        _logger.i('Device Found:');
-        _logger.i('  Name: ${r.advertisementData.advName.isNotEmpty ? r.advertisementData.advName : "Unknown"}');
-        _logger.i('  ID: ${r.device.remoteId}');
-        _logger.i('  RSSI: ${r.rssi}');
-        _logger.i('  Advertisement Data: ${r.advertisementData.toString()}');
+        //_logger.i('Device Found:');
+        //_logger.i('  Name: ${r.advertisementData.advName.isNotEmpty ? r.advertisementData.advName : "Unknown"}');
+        //_logger.i('  ID: ${r.device.remoteId}');
+        //_logger.i('  RSSI: ${r.rssi}');
+        //_logger.i('  Advertisement Data: ${r.advertisementData.toString()}');
       }
     }, onError: (e) => _logger.i('Error while scanning: $e'));
   }
@@ -119,7 +119,7 @@ Widget build(BuildContext context) {
       isScanning = false;
     });
 
-    _logger.i("Scanning complete.");
+    //_logger.i("Scanning complete.");
   }
 
 void _showDeviceModal(BluetoothDevice device) {
@@ -153,7 +153,7 @@ void _showDeviceModal(BluetoothDevice device) {
 
 Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
   try {
-    _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
+    //_logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
 
     await device.connect().timeout(
       const Duration(seconds: 10),
@@ -161,7 +161,7 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
         throw TimeoutException('Connection timed out. Please try again.');
       },
     );
-    _logger.i('Successfully connected to ${device.platformName}');
+    //_logger.i('Successfully connected to ${device.platformName}');
 
     List<BluetoothService> services = await device.discoverServices();
     if (services.isEmpty) {
@@ -169,30 +169,34 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
       return;
     }
 
+    // Open the file once for writing
+    final file = File('/storage/emulated/0/Download/bluetooth_log.txt'); // Android
+    final IOSink sink = file.openWrite(mode: FileMode.append); // Keep file open
+
     List<String> receivedData = [];
 
     for (var service in services) {
       for (var characteristic in service.characteristics) {
         if (characteristic.uuid.toString().contains('fef4')) {
-          // PERFORM CONTINUOUS READ
           while (true) {
             try {
               List<int> value = await characteristic.read();
               String stringValue = utf8.decode(value);
               receivedData.add(stringValue);
-              
-              // Append the received value to a file
-              await _appendToLogFile(stringValue);
 
-              print('Received: $stringValue');
+              // Write to file without reopening it each time
+              sink.write(stringValue);
 
               if (stringValue.contains('Dumped all sessions.')) {
-                print('Stopping as ALL SESSIONS DONE was received.');
-                print('Final concatenated string:\n${receivedData.join("\n")}');
+                //_logger.i('Stopping as "Dumped all sessions." was received.');
+
+                // Close the file and exit
+                await sink.close();
                 return;
               }
             } catch (e) {
-              print('Error reading characteristic: $e');
+              //_logger.e('Error reading characteristic: $e');
+              await sink.close();
               return;
             }
             await Future.delayed(Duration(milliseconds: 500));
@@ -200,9 +204,11 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
         }
       }
     }
+
     _showCharacteristicsDialog(device, receivedData, '');
+    await sink.close(); // Ensure file is closed after all reads
   } catch (e) {
-    _logger.e('Failed to connect: $e');
+    //_logger.e('Failed to connect: $e');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to connect to ${device.platformName}')),
@@ -222,16 +228,16 @@ Future<void> _appendToLogFile(String data) async {
 
       // If "Dumped all sessions." already exists, clear the file
       if (existingContent.contains('Dumped all sessions.')) {
-        print('Previous session detected. Clearing log file.');
+        //print('Previous session detected. Clearing log file.');
         await file.writeAsString(''); // Clear the file
       }
     }
 
     // Append the new data
     await file.writeAsString('$data\n', mode: FileMode.append);
-    print('Appended to file: $data');
+    //print('Appended to file: $data');
   } catch (e) {
-    print('Error writing to file: $e');
+    //print('Error writing to file: $e');
   }
 }
 
