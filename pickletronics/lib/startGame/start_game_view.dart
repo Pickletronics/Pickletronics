@@ -13,6 +13,7 @@ Future<void> _requestPermissions() async {
   await Permission.bluetoothScan.request();
   await Permission.bluetoothConnect.request();
   await Permission.location.request();
+  await Permission.storage.request(); // Request storage permission
 }
 
 class StartGameView extends StatefulWidget {
@@ -153,57 +154,53 @@ void _showDeviceModal(BluetoothDevice device) {
 Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
   try {
     _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
-    // TODO: spinner should begin here
+
     await device.connect().timeout(
-      const Duration(seconds: 10), // Set timeout duration
+      const Duration(seconds: 10),
       onTimeout: () {
         throw TimeoutException('Connection timed out. Please try again.');
       },
     );
     _logger.i('Successfully connected to ${device.platformName}');
 
-    // Get the correct writable directory
-    String testing = '';
-
     List<BluetoothService> services = await device.discoverServices();
     if (services.isEmpty) {
-      _showCharacteristicsDialog(device, [],'');
+      _showCharacteristicsDialog(device, [], '');
       return;
     }
 
-    List<String> characteristics = [];
     List<String> receivedData = [];
+
     for (var service in services) {
       for (var characteristic in service.characteristics) {
         if (characteristic.uuid.toString().contains('fef4')) {
           // PERFORM CONTINUOUS READ
           while (true) {
-          try {
-            List<int> value = await characteristic.read();
-            String stringValue = utf8.decode(value);
-            receivedData.add(stringValue);
-            await Future.sync(() {
-                  new_final_string += '\n$stringValue';
-            });
-            print('Received: $stringValue');
+            try {
+              List<int> value = await characteristic.read();
+              String stringValue = utf8.decode(value);
+              receivedData.add(stringValue);
+              
+              // Append the received value to a file
+              await _appendToLogFile(stringValue);
 
-            if (stringValue.contains('Dumped all sessions.')) {
-              print('Stopping as ALL SESSIONS DONE was received.');
-              print('Final string value: $new_final_string');
-              print('Final concatenated string:\n${receivedData.join("\n")}');
+              print('Received: $stringValue');
+
+              if (stringValue.contains('Dumped all sessions.')) {
+                print('Stopping as ALL SESSIONS DONE was received.');
+                print('Final concatenated string:\n${receivedData.join("\n")}');
+                return;
+              }
+            } catch (e) {
+              print('Error reading characteristic: $e');
               return;
             }
-          } catch (e) {
-            print('Error reading characteristic: $e');
-            return;
+            await Future.delayed(Duration(milliseconds: 500));
           }
-          await Future.delayed(Duration(milliseconds: 500));
-        }
         }
       }
     }
-
-    _showCharacteristicsDialog(device, characteristics, testing);
+    _showCharacteristicsDialog(device, receivedData, '');
   } catch (e) {
     _logger.e('Failed to connect: $e');
     if (mounted) {
@@ -211,6 +208,30 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
         SnackBar(content: Text('Failed to connect to ${device.platformName}')),
       );
     }
+  }
+}
+
+Future<void> _appendToLogFile(String data) async {
+  try {
+    final file = File('/storage/emulated/0/Download/bluetooth_log.txt'); // Android
+    // final file = File('C:/Users/livsa/Desktop/bluetooth_log.txt'); // Windows Debugging
+
+    // Read current file contents (if it exists)
+    if (await file.exists()) {
+      String existingContent = await file.readAsString();
+
+      // If "Dumped all sessions." already exists, clear the file
+      if (existingContent.contains('Dumped all sessions.')) {
+        print('Previous session detected. Clearing log file.');
+        await file.writeAsString(''); // Clear the file
+      }
+    }
+
+    // Append the new data
+    await file.writeAsString('$data\n', mode: FileMode.append);
+    print('Appended to file: $data');
+  } catch (e) {
+    print('Error writing to file: $e');
   }
 }
 
