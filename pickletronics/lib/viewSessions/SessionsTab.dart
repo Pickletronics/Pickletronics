@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'session_parser.dart';
 
-class SessionsTab extends StatelessWidget {
+class SessionsTab extends StatefulWidget {
+  const SessionsTab({super.key});
+
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text('Sessions Tab Content'),
-    );
-  }
+  _SessionsTabState createState() => _SessionsTabState();
 }
 
 class _SessionsTabState extends State<SessionsTab> {
@@ -44,12 +43,12 @@ class _SessionsTabState extends State<SessionsTab> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Session Details"),
+          title: const Text("Session Details"),
           content: Text("Impacts: ${session.impacts.length}"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("Close"),
+              child: const Text("Close"),
             )
           ],
         );

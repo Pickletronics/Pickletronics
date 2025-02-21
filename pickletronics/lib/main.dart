@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pickletronics/viewSessions/SessionsTab.dart';
 import 'StartGame/start_game_view.dart';
 import 'package:logger/logger.dart';
 
@@ -68,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
         children: const [
           StartGameView(),
           Center(child: Text('Recommendations')),
-          Center(child: Text('Sessions')),
+          SessionsTab(),
         ],
       ),
       bottomNavigationBar: TabBar(
@@ -87,6 +88,5 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
 }
 
 void startGame() {
-  // TODO: Bluetooth pairing logic goes here
   _logger.i('Start Game button pressed');
 }
