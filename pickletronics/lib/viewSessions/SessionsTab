@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+
+class SessionsTab extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('Sessions Tab Content'),
+    );
+  }
+}
+
+class _SessionsTabState extends State<SessionsTab> {
+  List<Session> _sessions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSessions();
+  }
+
+  Future<void> _loadSessions() async {
+    List<Session> sessions = await SessionParser().loadSessions();
+    setState(() {
+      _sessions = sessions;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: _sessions.length,
+      itemBuilder: (context, index) {
+        return ListTile(
+          title: Text('Session $index'),
+          subtitle: Text('${_sessions[index].impacts.length} impacts recorded'),
+          onTap: () => _showSessionDetails(_sessions[index]),
+        );
+      },
+    );
+  }
+
+  void _showSessionDetails(Session session) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Session Details"),
+          content: Text("Impacts: ${session.impacts.length}"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Close"),
+            )
+          ],
+        );
+      },
+    );
+  }
+}
