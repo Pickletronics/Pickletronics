@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'session_parser.dart'; // Contains SessionParser and ImpactBuilder
 import '/models/impact_graph.dart';
@@ -10,30 +11,8 @@ class SessionsView extends StatefulWidget {
 
 class _SessionsViewState extends State<SessionsView> {
   final SessionParser sessionParser = SessionParser();
-
-  // Simulated file processing. Replace with your actual file reading logic.
-  Future<void> _processFile() async {
-    final List<String> lines = await Future.delayed(
-      const Duration(seconds: 1),
-          () => [
-        "0",
-        "New Impact Data:",
-        "Acceleration Magnitude Array:",
-        "[7.1,7.2,7.3]",
-        "Impact Strength:",
-        "0.5",
-        "Impact Rotation:",
-        "1.0",
-        "Max Rotation:",
-        "1.5",
-        "Dumped all sessions."
-      ],
-    );
-    for (final line in lines) {
-      sessionParser.processIncomingLine(line);
-    }
-    setState(() {});
-  }
+  bool _isLoading = false;
+  String _errorMessage = '';
 
   @override
   void initState() {
@@ -41,20 +20,61 @@ class _SessionsViewState extends State<SessionsView> {
     _processFile();
   }
 
+  /// Reads the actual file contents from `bluetooth_log.txt` and parses them
+  /// into [Session] and [Impact] objects via SessionParser.
+  Future<void> _processFile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final file = File('/storage/emulated/0/Download/bluetooth_log.txt');
+      if (!await file.exists()) {
+        setState(() {
+          _errorMessage = 'Log file not found in Downloads folder.';
+        });
+        return;
+      }
+
+      // Read the entire file as a single String, then split by lines.
+      final fileContent = await file.readAsString();
+      final lines = fileContent.split('\n');
+
+      // Process each line with the SessionParser
+      for (final line in lines) {
+        sessionParser.processIncomingLine(line.trim());
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error reading/parsing file: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sessions = sessionParser.sessions;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sessions'),
       ),
-      body: sessions.isEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+          ? Center(child: Text(_errorMessage))
+          : sessions.isEmpty
           ? const Center(child: Text('No sessions found.'))
           : ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: sessions.length,
         itemBuilder: (context, sessionIndex) {
-          final session = sessionParser.sessions[sessionIndex];
+          final session = sessions[sessionIndex];
           return Card(
             elevation: 2,
             shape: RoundedRectangleBorder(
@@ -69,7 +89,9 @@ class _SessionsViewState extends State<SessionsView> {
                 ),
               ),
               subtitle: Text(
-                'Recorded on ${session.startTime} • ${session.impacts.length} impacts',
+                // You can customize the date/time formatting as needed:
+                'Recorded on ${session.startTime} • '
+                    '${session.impacts.length} impacts',
                 style: const TextStyle(fontSize: 14),
               ),
               children: [
