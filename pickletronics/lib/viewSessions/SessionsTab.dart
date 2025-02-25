@@ -17,24 +17,42 @@ class _SessionsTabState extends State<SessionsTab> {
     _loadSessions();
   }
 
-  Future<void> _loadSessions() async {
-    List<Session> sessions = await SessionParser().loadSessions();
-    setState(() {
-      _sessions = sessions;
-    });
-  }
+Future<void> _loadSessions() async {
+  List<Session> sessions = await SessionParser().loadSessions();
+  setState(() {
+    _sessions = sessions.reversed.toList();  // Reverse order: newest first
+  });
+  print("Loaded ${_sessions.length} sessions in reversed order.");
+}
+
+// Refresh sessions when coming back to the screen
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  _loadSessions();  // Reload sessions every time UI is shown
+}
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: _sessions.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text('Session $index'),
-          subtitle: Text('${_sessions[index].impacts.length} impacts recorded'),
-          onTap: () => _showSessionDetails(_sessions[index]),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: Text("Sessions")),
+      body: _sessions.isEmpty
+          ? Center(child: Text("No sessions recorded."))
+          : ListView.builder(
+              itemCount: _sessions.length,
+              itemBuilder: (context, index) {
+                // Reverse session numbering so Session 1 is the newest
+                int displayedSessionNumber = _sessions.length - index;
+                
+                return ListTile(
+                  title: Text("Session $displayedSessionNumber"),
+                  subtitle: Text("Impacts: ${_sessions[index].impacts.length}"),
+                  onTap: () {
+                    _showSessionDetails(_sessions[index]);
+                  },
+                );
+              },
+            ),
     );
   }
 
@@ -44,7 +62,7 @@ class _SessionsTabState extends State<SessionsTab> {
       builder: (context) {
         return AlertDialog(
           title: const Text("Session Details"),
-          content: Text("Impacts: ${session.impacts}"),
+          content: Text("Session Data: ${session.toJson()}"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
