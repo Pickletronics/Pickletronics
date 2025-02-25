@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'session_parser.dart';
+import 'session_detail_view.dart';
 
 class SessionsTab extends StatefulWidget {
   const SessionsTab({super.key});
@@ -17,20 +18,19 @@ class _SessionsTabState extends State<SessionsTab> {
     _loadSessions();
   }
 
-Future<void> _loadSessions() async {
-  List<Session> sessions = await SessionParser().loadSessions();
-  setState(() {
-    _sessions = sessions.reversed.toList();  // Reverse order: newest first
-  });
-  print("Loaded ${_sessions.length} sessions in reversed order.");
-}
+  Future<void> _loadSessions() async {
+    List<Session> sessions = await SessionParser().loadSessions();
+    setState(() {
+      _sessions = sessions.reversed.toList(); // Reverse order: newest first
+    });
+  }
 
-// Refresh sessions when coming back to the screen
-@override
-void didChangeDependencies() {
-  super.didChangeDependencies();
-  _loadSessions();  // Reload sessions every time UI is shown
-}
+  // Refresh sessions when coming back to the screen
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadSessions(); // Reload sessions every time UI is shown
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,36 +41,22 @@ void didChangeDependencies() {
           : ListView.builder(
               itemCount: _sessions.length,
               itemBuilder: (context, index) {
-                // Reverse session numbering so Session 1 is the newest
                 int displayedSessionNumber = _sessions.length - index;
                 
                 return ListTile(
                   title: Text("Session $displayedSessionNumber"),
                   subtitle: Text("Impacts: ${_sessions[index].impacts.length}"),
                   onTap: () {
-                    _showSessionDetails(_sessions[index]);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SessionDetailsPage(session: _sessions[index]),
+                      ),
+                    );
                   },
                 );
               },
             ),
-    );
-  }
-
-  void _showSessionDetails(Session session) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Session Details"),
-          content: Text("Session Data: ${session.toJson()}"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Close"),
-            )
-          ],
-        );
-      },
     );
   }
 }
