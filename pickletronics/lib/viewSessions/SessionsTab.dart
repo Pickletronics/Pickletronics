@@ -44,7 +44,7 @@ class _SessionsTabState extends State<SessionsTab> {
       builder: (context) {
         return AlertDialog(
           title: const Text("Session Details"),
-          content: Text("Impacts: ${session.impacts.length}"),
+          content: Text("Impacts: ${session.impacts}"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

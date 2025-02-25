@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logger/logger.dart';
+import 'package:pickletronics/viewSessions/SessionsTab.dart';
+import 'package:pickletronics/viewSessions/session_parser.dart';
 
 final Logger _logger = Logger();
 String new_final_string = '';
@@ -187,8 +189,9 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
               print('Received: $stringValue');
 
               if (stringValue.contains('Dumped all sessions.')) {
-                print('Stopping as ALL SESSIONS DONE was received.');
-                print('Final concatenated string:\n${receivedData.join("\n")}');
+                await Future.delayed(Duration(milliseconds: 100));
+                List<Session> parsedSessions = await SessionParser().parseFile();
+                print("Parsed sessions: ${parsedSessions.map((s) => s.toJson()).toList()}");
                 return;
               }
             } catch (e) {
@@ -213,23 +216,23 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
 
 Future<void> _appendToLogFile(String data) async {
   try {
-    final file = File('/storage/emulated/0/Download/bluetooth_log.txt'); // Android
-    // final file = File('C:/Users/livsa/Desktop/bluetooth_log.txt'); // Windows Debugging
+    final file = File('/storage/emulated/0/Download/bluetooth_log.txt');
 
-    // Read current file contents (if it exists)
     if (await file.exists()) {
       String existingContent = await file.readAsString();
-
-      // If "Dumped all sessions." already exists, clear the file
       if (existingContent.contains('Dumped all sessions.')) {
         print('Previous session detected. Clearing log file.');
         await file.writeAsString(''); // Clear the file
       }
     }
 
-    // Append the new data
+    // Append data and ensure it is written before moving on
     await file.writeAsString('$data\n', mode: FileMode.append);
     print('Appended to file: $data');
+    
+    // Delay to allow filesystem sync before parsing
+    await Future.delayed(Duration(milliseconds: 100));
+
   } catch (e) {
     print('Error writing to file: $e');
   }
