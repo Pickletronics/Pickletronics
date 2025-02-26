@@ -50,7 +50,10 @@ class _SessionsTabState extends State<SessionsTab> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SessionDetailsPage(session: _sessions[index]),
+                        builder: (context) => SessionDetailsPage(
+                          session: _sessions[index], 
+                          displayedSessionNumber: displayedSessionNumber,  // ✅ Pass correct session number
+                        ),
                       ),
                     );
                   },
