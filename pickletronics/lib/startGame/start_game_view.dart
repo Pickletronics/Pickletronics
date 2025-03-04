@@ -10,6 +10,7 @@ import 'package:pickletronics/viewSessions/session_parser.dart';
 
 final Logger _logger = Logger();
 String new_final_string = '';
+bool isLoading = false;
 
 Future<void> _requestPermissions() async {
   await Permission.bluetoothScan.request();
@@ -155,6 +156,9 @@ void _showDeviceModal(BluetoothDevice device) {
 
 Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
   try {
+    setState(() => isLoading = true);
+    _showLoadingDialog('Connecting to ${device.platformName}...');
+
     _logger.i('Connecting to device: ${device.platformName} (${device.remoteId})');
 
     await device.connect().timeout(
@@ -163,10 +167,16 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
         throw TimeoutException('Connection timed out. Please try again.');
       },
     );
+    
     _logger.i('Successfully connected to ${device.platformName}');
+
+    // Update the loading dialog message
+    Navigator.pop(context); // Close previous dialog
+    _showLoadingDialog('Reading data from ${device.platformName}...');
 
     List<BluetoothService> services = await device.discoverServices();
     if (services.isEmpty) {
+      Navigator.pop(context); // Close the loading dialog
       _showCharacteristicsDialog(device, [], '');
       return;
     }
@@ -176,26 +186,26 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
     for (var service in services) {
       for (var characteristic in service.characteristics) {
         if (characteristic.uuid.toString().contains('fef4')) {
-          // PERFORM CONTINUOUS READ
           while (true) {
             try {
               List<int> value = await characteristic.read();
               String stringValue = utf8.decode(value);
               receivedData.add(stringValue);
-              
-              // Append the received value to a file
-              await _appendToLogFile(stringValue);
 
+              await _appendToLogFile(stringValue);
               print('Received: $stringValue');
 
               if (stringValue.contains('Dumped all sessions.')) {
                 await Future.delayed(Duration(milliseconds: 100));
                 List<Session> parsedSessions = await SessionParser().parseFile();
                 print("Parsed sessions: ${parsedSessions.map((s) => s.toJson()).toList()}");
+
+                Navigator.pop(context); // Close the loading dialog
                 return;
               }
             } catch (e) {
               print('Error reading characteristic: $e');
+              Navigator.pop(context); // Close the loading dialog
               return;
             }
             await Future.delayed(Duration(milliseconds: 500));
@@ -203,14 +213,18 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
         }
       }
     }
+    Navigator.pop(context); // Close the loading dialog after reading
     _showCharacteristicsDialog(device, receivedData, '');
   } catch (e) {
+    Navigator.pop(context); // Close the loading dialog if an error occurs
     _logger.e('Failed to connect: $e');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to connect to ${device.platformName}')),
       );
     }
+  } finally {
+    setState(() => isLoading = false);
   }
 }
 
@@ -236,6 +250,25 @@ Future<void> _appendToLogFile(String data) async {
   } catch (e) {
     print('Error writing to file: $e');
   }
+}
+
+void _showLoadingDialog(String message) {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Prevents user from dismissing it manually
+    builder: (BuildContext context) {
+      return AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(message),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 void _showCharacteristicsDialog(BluetoothDevice device, List<String> characteristics, String temp) {
