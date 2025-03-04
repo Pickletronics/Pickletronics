@@ -177,11 +177,12 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
     if (services.isEmpty) {
       Navigator.pop(context); // Close the loading dialog
-      _showCharacteristicsDialog(device, [], '');
+      _showFailureModal("Failed to retrieve data from ${device.platformName}");
       return;
     }
 
     List<String> receivedData = [];
+    bool sessionCreated = false;
 
     for (var service in services) {
       for (var characteristic in service.characteristics) {
@@ -200,12 +201,13 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
                 List<Session> parsedSessions = await SessionParser().parseFile();
                 print("Parsed sessions: ${parsedSessions.map((s) => s.toJson()).toList()}");
 
-                Navigator.pop(context); // Close the loading dialog
-                return;
+                sessionCreated = true;
+                break;
               }
             } catch (e) {
               print('Error reading characteristic: $e');
               Navigator.pop(context); // Close the loading dialog
+              _showFailureModal("Error reading data from ${device.platformName}");
               return;
             }
             await Future.delayed(Duration(milliseconds: 500));
@@ -213,19 +215,64 @@ Future<void> _connectAndReadCharacteristics(BluetoothDevice device) async {
         }
       }
     }
-    Navigator.pop(context); // Close the loading dialog after reading
-    _showCharacteristicsDialog(device, receivedData, '');
-  } catch (e) {
-    Navigator.pop(context); // Close the loading dialog if an error occurs
-    _logger.e('Failed to connect: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to connect to ${device.platformName}')),
-      );
+
+    Navigator.pop(context); // Close the loading dialog
+
+    if (sessionCreated) {
+      _showSuccessModal("Session data successfully received from ${device.platformName}.");
+    } else {
+      _showFailureModal("No valid session data found from ${device.platformName}.");
     }
+
+  } catch (e) {
+    Navigator.pop(context); // Close the loading dialog
+    _logger.e('Failed to connect: $e');
+    _showFailureModal("Failed to connect to ${device.platformName}");
   } finally {
     setState(() => isLoading = false);
   }
+}
+
+void _showFailureModal(String message) {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Requires user to tap "OK"
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+void _showSuccessModal(String message) {
+  showDialog(
+    context: context,
+    barrierDismissible: false, // Requires user to tap "OK"
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Success'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 Future<void> _appendToLogFile(String data) async {
