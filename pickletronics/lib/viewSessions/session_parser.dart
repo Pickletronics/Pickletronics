@@ -34,19 +34,23 @@ class Impact {
 class Session {
   int sessionNumber;
   List<Impact> impacts;
+  DateTime? timestamp;
 
   Session({
     required this.sessionNumber,
+    required this.timestamp,
     required this.impacts,
   });
 
   Map<String, dynamic> toJson() => {
         "sessionNumber": sessionNumber,
+        "timestamp": timestamp?.toIso8601String(),
         "impacts": impacts.map((e) => e.toJson()).toList(),
       };
 
   factory Session.fromJson(Map<String, dynamic> json) => Session(
         sessionNumber: json["sessionNumber"] ?? 0,
+        timestamp: json["timestamp"] != null ? DateTime.parse(json["timestamp"]) : null,
         impacts: (json["impacts"] as List)
             .map((e) => Impact.fromJson(e))
             .toList(),
@@ -118,7 +122,11 @@ class SessionParser {
           sessionNumber++;
         }
 
-        currentSession = Session(sessionNumber: sessionNumber, impacts: []);
+        currentSession = Session(
+        sessionNumber: sessionNumber,
+        timestamp: DateTime.now(),
+        impacts: [],
+        );
         currentImpacts = [];
 
         currentIndex += sessionMatch.end;

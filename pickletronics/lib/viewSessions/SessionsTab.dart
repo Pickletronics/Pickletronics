@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'session_parser.dart';
 import 'session_detail_view.dart';
+import 'package:intl/intl.dart';
 
 class SessionsTab extends StatefulWidget {
   const SessionsTab({super.key});
@@ -45,14 +46,23 @@ class _SessionsTabState extends State<SessionsTab> {
                 
                 return ListTile(
                   title: Text("Session $displayedSessionNumber"),
-                  subtitle: Text("Impacts: ${_sessions[index].impacts.length}"),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _sessions[index].timestamp != null
+                            ? DateFormat("MMMM d, y h:mm a").format(_sessions[index].timestamp!)
+                            : "Unknown Date",
+                      )
+                    ],
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => SessionDetailsPage(
                           session: _sessions[index], 
-                          displayedSessionNumber: displayedSessionNumber,  // ✅ Pass correct session number
+                          displayedSessionNumber: displayedSessionNumber,
                         ),
                       ),
                     );
