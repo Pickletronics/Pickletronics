@@ -37,17 +37,16 @@ class StartGameViewState extends State<StartGameView> {
     // Initialize scan results subscription
     _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isNotEmpty) {
-        ScanResult r = results.last; // Get the most recently found device
-        if (!_devicesList.contains(r.device) && (r.device.platformName.isNotEmpty)) {
-          setState(() {
-            _devicesList.add(r.device); // Add device if not already in the list
-          });
+        ScanResult r = results.last;
+        
+        if (r.device.platformName == "Pickleball-Swing-Tracker") {
+          if (!_devicesList.contains(r.device)) {
+            setState(() {
+              _devicesList.clear(); // Only track one device
+              _devicesList.add(r.device);
+            });
+          }
         }
-        _logger.i('Device Found:');
-        _logger.i('  Name: ${r.advertisementData.advName.isNotEmpty ? r.advertisementData.advName : "Unknown"}');
-        _logger.i('  ID: ${r.device.remoteId}');
-        _logger.i('  RSSI: ${r.rssi}');
-        _logger.i('  Advertisement Data: ${r.advertisementData.toString()}');
       }
     }, onError: (e) => _logger.i('Error while scanning: $e'));
   }
