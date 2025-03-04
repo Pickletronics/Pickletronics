@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
 
   String get _appBarTitle {
     // Check if the TabController is initialized and return the title based on the selected tab index
-    if (_tabController.index == 0) return 'Welcome Back';
+    if (_tabController.index == 0) return 'Pickletronics';
     if (_tabController.index == 1) return 'Improve your Game';
     if (_tabController.index == 2) return 'Previous Sessions';
     return widget.title; // Fallback to default title
@@ -62,7 +62,25 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(_appBarTitle), // Set the title dynamically
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween, // Ensures spacing between text and logo
+          children: [
+            const Text(
+              'PICKLETRONICS',
+              style: TextStyle(
+                fontSize: 35,
+                fontWeight: FontWeight.bold,
+                color: Color.fromARGB(171, 38, 81, 151), // Adjust color if necessary
+              ),
+            ),
+            Image.asset(
+              'assets/pickletronics_banner.png',
+              height: 75,
+              fit: BoxFit.fitHeight,
+            ),
+          ],
+        ),
+        centerTitle: false, // Keeps custom alignment
       ),
       body: TabBarView(
         controller: _tabController,
@@ -75,8 +93,8 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
       bottomNavigationBar: TabBar(
         controller: _tabController,
         tabs: const [
-          Tab(icon: Icon(Icons.sports_tennis), text: 'Start Game'),
-          Tab(icon: Icon(Icons.read_more), text: 'Recommendations'),
+          Tab(icon: Icon(Icons.sports_tennis), text: 'Dashboard'),
+          Tab(icon: Icon(Icons.read_more), text: 'Insights'),
           Tab(icon: Icon(Icons.analytics_outlined), text: 'Sessions'),
         ],
         labelColor: Colors.black,
