@@ -60,44 +60,89 @@ class StartGameViewState extends State<StartGameView> {
 
 @override
 Widget build(BuildContext context) {
-  return Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+  return Scaffold(
+    backgroundColor: Colors.grey[200], // Light background for contrast
+    body: Stack(
       children: [
-        ElevatedButton(
-          onPressed: isScanning ? null : _startScanning,
-          child: Text(isScanning ? 'Scanning...' : 'Scan for Nearby Devices'),
-        ),
-        const SizedBox(height: 20),
-        if (_devicesList.isNotEmpty)
-          Expanded(
-            child: ListView.builder(
-              itemCount: _devicesList.length,
-              itemBuilder: (context, index) {
-                final device = _devicesList[index];
-                return ListTile(
-                  title: Text(
-                    device.platformName.isNotEmpty ? device.platformName : 'Unknown Device',
-                    style: const TextStyle(fontSize: 18),
+        // Main content
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: isScanning ? null : _startScanning,
+                child: Text(isScanning ? 'Scanning...' : 'Scan for Nearby Devices'),
+              ),
+              const SizedBox(height: 20),
+              if (_devicesList.isNotEmpty)
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _devicesList.length,
+                    itemBuilder: (context, index) {
+                      final device = _devicesList[index];
+                      return ListTile(
+                        title: Text(
+                          device.platformName.isNotEmpty ? device.platformName : 'Unknown Device',
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                        subtitle: Text('ID: ${device.remoteId}'),
+                        trailing: const Icon(Icons.bluetooth),
+                        onTap: () {
+                          _showDeviceModal(device);
+                        },
+                      );
+                    },
                   ),
-                  subtitle: Text('ID: ${device.remoteId}'),
-                  trailing: const Icon(Icons.bluetooth),
-                  onTap: () {
-                    _showDeviceModal(device);
-                  },
-                );
-              },
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Text(
+                    'No devices found. Tap "Pair Device" to scan.',
+                    style: TextStyle(fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Align(
+          alignment: const Alignment(0, -0.9),
+          child: Card(
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-          )
-        else
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
-            child: Text(
-              'No devices found. Tap "Pair Device" to scan.',
-              style: TextStyle(fontSize: 18),
-              textAlign: TextAlign.center,
+            color: Colors.white,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.9,
+              height: MediaQuery.of(context).size.height * 0.3,
+              padding: const EdgeInsets.all(10),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Welcome Back!",
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 20),
+
+                  // Placeholder for analytics
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text("🏆 Best Session: 15 pts", style: TextStyle(fontSize: 18)),
+                        Text("📊 Total Games: 32", style: TextStyle(fontSize: 18)),
+                        Text("⏳ Avg. Game Duration: 10m", style: TextStyle(fontSize: 18)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
+        ),
       ],
     ),
   );

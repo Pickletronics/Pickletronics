@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(200, 200, 200, 200)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(199, 176, 210, 247)),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Pickletronics'),
@@ -61,26 +61,19 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color.fromARGB(159, 112, 178, 249),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween, // Ensures spacing between text and logo
           children: [
-            const Text(
-              'PICKLETRONICS',
-              style: TextStyle(
-                fontSize: 35,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(171, 38, 81, 151), // Adjust color if necessary
-              ),
-            ),
+            // Center this image in the app bar
             Image.asset(
               'assets/pickletronics_banner.png',
-              height: 75,
+              height: 175,
               fit: BoxFit.fitHeight,
             ),
           ],
         ),
-        centerTitle: false, // Keeps custom alignment
+        centerTitle: true,
       ),
       body: TabBarView(
         controller: _tabController,
