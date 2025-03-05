@@ -72,6 +72,24 @@ class SessionParser {
     return 0;
   }
 
+Future<void> deleteSession(int index) async {
+  final file = File(sessionJsonPath);
+  if (!await file.exists()) return;
+
+  // Load existing sessions
+  String jsonString = await file.readAsString();
+  List<dynamic> jsonData = jsonDecode(jsonString);
+  List<Session> sessions = jsonData.map((e) => Session.fromJson(e)).toList();
+
+  if (index < 0 || index >= sessions.length) return; // Prevent invalid index access
+
+  // Remove the correct session
+  sessions.removeAt(index);
+
+  // Save updated list back to the file
+  await file.writeAsString(jsonEncode(sessions));
+}
+
   Future<List<Session>> parseFile() async {
     final file = File(logFilePath);
     if (!await file.exists()) {
