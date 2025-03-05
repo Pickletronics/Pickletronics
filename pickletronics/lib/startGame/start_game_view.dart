@@ -60,96 +60,118 @@ class StartGameViewState extends State<StartGameView> {
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    backgroundColor: Colors.grey[200],
-    body: Column(
+    body: Stack(
+      fit: StackFit.expand, // Ensures background covers entire screen
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 20),
-          child: Center(
-            child: Card(
-              elevation: 5,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-              color: Colors.white,
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: MediaQuery.of(context).size.height * 0.3,
-                padding: const EdgeInsets.all(20),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Welcome Back!",
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        // Background Image
+        Image.asset(
+          'assets/background.png', // Change this to your image path
+          fit: BoxFit.cover, // Ensures it fills the entire screen
+        ),
+
+        // Main content
+        Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Center(
+                child: Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  color: const Color.fromARGB(205, 255, 255, 255),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.9,
+                    height: MediaQuery.of(context).size.height * 0.25,
+                    padding: const EdgeInsets.all(20),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Welcome Back!",
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 20),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Text("🏆 Best Session: 15 pts", style: TextStyle(fontSize: 18)),
+                              Text("📊 Total Games: 32", style: TextStyle(fontSize: 18)),
+                              Text("⏳ Avg. Game Duration: 10m", style: TextStyle(fontSize: 18)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 20),
-                    // Placeholder for analytics
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Text("🏆 Best Session: 15 pts", style: TextStyle(fontSize: 18)),
-                          Text("📊 Total Games: 32", style: TextStyle(fontSize: 18)),
-                          Text("⏳ Avg. Game Duration: 10m", style: TextStyle(fontSize: 18)),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
 
-        // Ensures button and device list stay beneath the dashboard
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10), // Adds spacing
-
-              // Pair Device Button
-              ElevatedButton(
-                onPressed: isScanning ? null : _startScanning,
-                child: Text(isScanning ? 'Scanning...' : 'Scan for Nearby Devices'),
-              ),
-
-              const SizedBox(height: 20), // Adds spacing between button and list
-
-              // List of Nearby Devices
-              Expanded(
-                child: _devicesList.isNotEmpty
-                    ? ListView.builder(
-                        itemCount: _devicesList.length,
-                        itemBuilder: (context, index) {
-                          final device = _devicesList[index];
-                          return ListTile(
-                            title: Text(
-                              device.platformName.isNotEmpty
-                                  ? device.platformName
-                                  : 'Unknown Device',
-                              style: const TextStyle(fontSize: 18),
-                            ),
-                            subtitle: Text('ID: ${device.remoteId}'),
-                            trailing: const Icon(Icons.bluetooth),
-                            onTap: () {
-                              _showDeviceModal(device);
-                            },
-                          );
-                        },
-                      )
-                    : const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text(
-                          'No devices found. Tap "Pair Device" to scan.',
-                          style: TextStyle(fontSize: 18),
-                          textAlign: TextAlign.center,
-                        ),
+            // Button and Bluetooth Devices List
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: isScanning ? null : _startScanning,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 250, 250, 251),
+                      foregroundColor: const Color.fromARGB(255, 4, 4, 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
                       ),
+                    ),
+                    child: Text(
+                      isScanning ? 'Scanning...' : 'Scan for Nearby Devices',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: _devicesList.isNotEmpty
+                        ? ListView.builder(
+                            itemCount: _devicesList.length,
+                            itemBuilder: (context, index) {
+                              final device = _devicesList[index];
+                              return Card(
+                                color: const Color.fromARGB(188, 26, 53, 121).withOpacity(0.8), // Purple background
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                                child: ListTile(
+                                  title: Text(
+                                    device.platformName.isNotEmpty ? device.platformName : 'Unknown Device',
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                  subtitle: Text(
+                                    'ID: ${device.remoteId}',
+                                    style: const TextStyle(color: Colors.white70),
+                                  ),
+                                  trailing: const Icon(Icons.bluetooth, color: Colors.white),
+                                  onTap: () {
+                                    _showDeviceModal(device);
+                                  },
+                                ),
+                              );
+                            },
+                          )
+                        : const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text(
+                            'No devices found. Tap "Pair Device" to scan.',
+                            style: TextStyle(fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     ),

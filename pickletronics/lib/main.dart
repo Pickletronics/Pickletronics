@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(199, 176, 210, 247)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(198, 48, 119, 87)),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Pickletronics'),
@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(159, 112, 178, 249),
+        backgroundColor: const Color.fromARGB(197, 251, 251, 252),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween, // Ensures spacing between text and logo
           children: [
