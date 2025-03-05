@@ -19,17 +19,29 @@ class _SessionsTabState extends State<SessionsTab> {
     _loadSessions();
   }
 
-Future<void> _deleteSession(int displayedIndex) async {
-  int actualIndex = _sessions.length - 1 - displayedIndex; // Fixes reversed index issue
+  Future<void> _deleteSession(int displayedIndex) async {
+  int actualIndex = _sessions.length - 1 - displayedIndex;
   await SessionParser().deleteSession(actualIndex);
-  _loadSessions(); // Refresh session list
+  _loadSessions();
+
+  // Notify StartGameView that sessions were updated
+  if (mounted) {
+    setState(() {}); // Ensure UI updates
+  }
 }
 
+  void _notifyDashboard() {
+    Navigator.of(context).pop(); // Close dialog
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context); // Ensure dashboard updates if user navigates back
+    }
+  }
+
   Future<void> _loadSessions() async {
-    List<Session> sessions = await SessionParser().loadSessions();
-    setState(() {
-      _sessions = sessions.reversed.toList(); // Reverse order: newest first
-    });
+      List<Session> sessions = await SessionParser().loadSessions();
+      setState(() {
+        _sessions = sessions.reversed.toList(); // Reverse order: newest first
+      });
   }
 
   void _confirmDeleteSession(int index) {

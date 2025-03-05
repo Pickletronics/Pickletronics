@@ -11,6 +11,7 @@ import 'package:pickletronics/viewSessions/session_parser.dart';
 final Logger _logger = Logger();
 String new_final_string = '';
 bool isLoading = false;
+int _totalSessions = 0;
 
 Future<void> _requestPermissions() async {
   await Permission.bluetoothScan.request();
@@ -34,15 +35,15 @@ class StartGameViewState extends State<StartGameView> {
   @override
   void initState() {
     super.initState();
-    // Initialize scan results subscription
+    _loadTotalSessions(); // Load session count on startup
+
     _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isNotEmpty) {
         ScanResult r = results.last;
-        
         if (r.device.platformName == "Pickleball-Swing-Tracker") {
           if (!_devicesList.contains(r.device)) {
             setState(() {
-              _devicesList.clear(); // Only track one device
+              _devicesList.clear(); 
               _devicesList.add(r.device);
             });
           }
@@ -85,21 +86,21 @@ Widget build(BuildContext context) {
                     width: MediaQuery.of(context).size.width * 0.9,
                     height: MediaQuery.of(context).size.height * 0.25,
                     padding: const EdgeInsets.all(20),
-                    child: const Column(
+                    child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
+                        const Text(
                           "Welcome Back!",
                           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Expanded(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              Text("🏆 Best Session: 15 pts", style: TextStyle(fontSize: 18)),
-                              Text("📊 Total Games: 32", style: TextStyle(fontSize: 18)),
-                              Text("⏳ Avg. Game Duration: 10m", style: TextStyle(fontSize: 18)),
+                              Text("Total Sessions Recorded: $_totalSessions", style: const TextStyle(fontSize: 18)),
+                              const Text("Average hits per session:", style: TextStyle(fontSize: 18)),
+                              const Text("Average % Sweet Spot Hits:", style: TextStyle(fontSize: 18)),
                             ],
                           ),
                         ),
@@ -176,6 +177,13 @@ Widget build(BuildContext context) {
       ],
     ),
   );
+}
+
+Future<void> _loadTotalSessions() async {
+  List<Session> sessions = await SessionParser().loadSessions();
+  setState(() {
+    _totalSessions = sessions.length;
+  });
 }
 
   Future<void> _startScanning() async {
