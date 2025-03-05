@@ -34,19 +34,23 @@ class Impact {
 class Session {
   int sessionNumber;
   List<Impact> impacts;
+  DateTime? timestamp;
 
   Session({
     required this.sessionNumber,
+    required this.timestamp,
     required this.impacts,
   });
 
   Map<String, dynamic> toJson() => {
         "sessionNumber": sessionNumber,
+        "timestamp": timestamp?.toIso8601String(),
         "impacts": impacts.map((e) => e.toJson()).toList(),
       };
 
   factory Session.fromJson(Map<String, dynamic> json) => Session(
         sessionNumber: json["sessionNumber"] ?? 0,
+        timestamp: json["timestamp"] != null ? DateTime.parse(json["timestamp"]) : null,
         impacts: (json["impacts"] as List)
             .map((e) => Impact.fromJson(e))
             .toList(),
@@ -67,6 +71,24 @@ class SessionParser {
     }
     return 0;
   }
+
+Future<void> deleteSession(int index) async {
+  final file = File(sessionJsonPath);
+  if (!await file.exists()) return;
+
+  // Load existing sessions
+  String jsonString = await file.readAsString();
+  List<dynamic> jsonData = jsonDecode(jsonString);
+  List<Session> sessions = jsonData.map((e) => Session.fromJson(e)).toList();
+
+  if (index < 0 || index >= sessions.length) return; // Prevent invalid index access
+
+  // Remove the correct session
+  sessions.removeAt(index);
+
+  // Save updated list back to the file
+  await file.writeAsString(jsonEncode(sessions));
+}
 
   Future<List<Session>> parseFile() async {
     final file = File(logFilePath);
@@ -118,7 +140,11 @@ class SessionParser {
           sessionNumber++;
         }
 
-        currentSession = Session(sessionNumber: sessionNumber, impacts: []);
+        currentSession = Session(
+        sessionNumber: sessionNumber,
+        timestamp: DateTime.now(),
+        impacts: [],
+        );
         currentImpacts = [];
 
         currentIndex += sessionMatch.end;
