@@ -40,7 +40,7 @@ class StartGameViewState extends State<StartGameView> {
     _scanSubscription = FlutterBluePlus.onScanResults.listen((results) {
       if (results.isNotEmpty) {
         ScanResult r = results.last;
-        if (r.device.platformName == "Pickleball-Swing-Tracker") {
+        if (r.device.platformName == "BLE-Server") {
           if (!_devicesList.contains(r.device)) {
             setState(() {
               _devicesList.clear(); 
