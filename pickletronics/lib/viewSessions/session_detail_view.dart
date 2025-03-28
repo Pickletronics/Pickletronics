@@ -57,7 +57,7 @@ class SessionDetailsPage extends StatelessWidget {
                 return ImpactCardWithGraph(
                   impact: impact,
                   impactNumber: index,
-                  isSweetSpot: isSweetSpot(impact),
+                  isSweetSpot: impact.isSweetSpot, // use the saved value
                 );
               }).toList(),
             ),
@@ -249,7 +249,7 @@ class ImpactGraph extends StatelessWidget {
         lineTouchData: LineTouchData(
           enabled: true,
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => color.withOpacity(0.8),
+            tooltipBgColor: color.withOpacity(0.8),
             tooltipRoundedRadius: 8,
             getTooltipItems: (List<LineBarSpot> touchedSpots) {
               return touchedSpots.map((spot) {
@@ -272,14 +272,14 @@ class ImpactGraph extends StatelessWidget {
           horizontalInterval: range / 4,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: Colors.grey[300],
+              color: Colors.grey[300] ?? Colors.grey,
               strokeWidth: 1,
               dashArray: [5, 5],
             );
           },
           getDrawingVerticalLine: (value) {
             return FlLine(
-              color: Colors.grey[300],
+              color: Colors.grey[300] ?? Colors.grey,
               strokeWidth: 1,
               dashArray: [5, 5],
             );

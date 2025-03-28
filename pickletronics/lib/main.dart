@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pickletronics/viewSessions/SessionsTab.dart';
 import 'StartGame/start_game_view.dart';
 import 'package:logger/logger.dart';
+import 'insightsTab/insights_tab.dart';
 
 final Logger _logger = Logger();
 
@@ -79,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
         controller: _tabController,
         children: const [
           StartGameView(),
-          Center(child: Text('Recommendations')),
+          InsightsTab(),
           SessionsTab(),
         ],
       ),
