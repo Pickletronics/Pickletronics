@@ -196,25 +196,131 @@ Widget _buildLastSessionsBarChartContent() {
   );
 }
 
-  // Existing cards for High Spin Shots, Strongest Shot, and Totals Row...
-  Widget _buildHighSpinShotsCard() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+Widget _buildHighSpinShotsCard() {
+  // Calculate counts for each spin threshold
+  int count0to75 = 0;
+  int count76to150 = 0;
+  int count151to225 = 0;
+  int count226to360 = 0;
+
+  for (final session in allSessions) {
+    for (final impact in session.impacts) {
+      double rotation = impact.impactRotation;
+      if (rotation <= 75) {
+        count0to75++;
+      } else if (rotation <= 150) {
+        count76to150++;
+      } else if (rotation <= 225) {
+        count151to225++;
+      } else if (rotation <= 360) {
+        count226to360++;
+      }
+    }
+  }
+
+  // Use the highest threshold count for the high spin shots value.
+  int highSpinShotsValue = count226to360;
+
+  // Create pie chart sections for each threshold.
+  List<PieChartSectionData> sections = [
+    PieChartSectionData(
+      value: count0to75.toDouble(),
+      title: count0to75 > 0 ? '$count0to75' : '',
+      color: Colors.blue,
+      radius: 50,
+      titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+    ),
+    PieChartSectionData(
+      value: count76to150.toDouble(),
+      title: count76to150 > 0 ? '$count76to150' : '',
+      color: Colors.orange,
+      radius: 50,
+      titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+    ),
+    PieChartSectionData(
+      value: count151to225.toDouble(),
+      title: count151to225 > 0 ? '$count151to225' : '',
+      color: const Color.fromARGB(255, 107, 214, 139),
+      radius: 50,
+      titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+    ),
+    PieChartSectionData(
+      value: count226to360.toDouble(),
+      title: count226to360 > 0 ? '$count226to360' : '',
+      color: const Color.fromARGB(255, 231, 80, 82),
+      radius: 50,
+      titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+    ),
+  ];
+
+return Card(
+  elevation: 3,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  child: Stack(
+    children: [
+      Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text("High Spin Shots",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text("27", style: TextStyle(fontSize: 24)),
+          children: [
+            const Text(
+              "High Spin Shots",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "You've hit a total of \n$highSpinShotsValue high-spin shots!",
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 200,
+              child: PieChart(
+                PieChartData(
+                  sections: sections,
+                  centerSpaceRadius: 40,
+                  sectionsSpace: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                _buildLegendItem(Colors.blue, "0-75°/s"),
+                _buildLegendItem(Colors.orange, "76-150°/s"),
+                _buildLegendItem(Color.fromARGB(255, 107, 214, 139), "151-225°/s"),
+                _buildLegendItem(Color.fromARGB(255, 231, 80, 82), "226-360°/s"),
+              ],
+            ),
           ],
         ),
       ),
-    );
-  }
+      Positioned(
+        top: 8,
+        right: 8,
+        child: Image.asset(
+          'assets/spin_shot.png',
+          width: 100,
+          height: 100,
+        ),
+      ),
+    ],
+  ),
+);
+}
+
+Widget _buildLegendItem(Color color, String text) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(width: 16, height: 16, color: color),
+      const SizedBox(width: 4),
+      Text(text),
+    ],
+  );
+}
 
   Widget _buildStrongestShotCard() {
     return Card(
