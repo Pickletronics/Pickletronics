@@ -322,24 +322,52 @@ Widget _buildLegendItem(Color color, String text) {
   );
 }
 
-  Widget _buildStrongestShotCard() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text("Strongest Shot",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text("Backhand Drive – 62mph", style: TextStyle(fontSize: 24)),
-          ],
-        ),
-      ),
-    );
+Widget _buildStrongestShotCard() {
+  // Calculate the maximum swing strength across all sessions.
+  double strongestShotValue = 0.0;
+  for (final session in allSessions) {
+    for (final impact in session.impacts) {
+      if (impact.impactStrength > strongestShotValue) {
+        strongestShotValue = impact.impactStrength;
+      }
+    }
   }
+
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(120, 20, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Strongest Shot",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "${strongestShotValue.toStringAsFixed(1)} g",
+                style: const TextStyle(fontSize: 24),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 8,
+          left: 8,
+          child: Image.asset(
+            'assets/strong.png',
+            width: 80,
+            height: 80,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildTotalRow(String label, String value) {
     return Padding(
