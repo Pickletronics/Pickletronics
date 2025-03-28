@@ -80,16 +80,16 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
         controller: _tabController,
         children: const [
           StartGameView(),
-          InsightsTab(),
           SessionsTab(),
+          InsightsTab(),
         ],
       ),
       bottomNavigationBar: TabBar(
         controller: _tabController,
         tabs: const [
           Tab(icon: Icon(Icons.sports_tennis), text: 'Dashboard'),
-          Tab(icon: Icon(Icons.read_more), text: 'Insights'),
           Tab(icon: Icon(Icons.analytics_outlined), text: 'Sessions'),
+          Tab(icon: Icon(Icons.read_more), text: 'Insights'),
         ],
         labelColor: Colors.black,
         unselectedLabelColor: Colors.grey,
