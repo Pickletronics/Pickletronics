@@ -1,18 +1,21 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:pickletronics/utils/sweet_spot.dart';
 
-/// Impact class to store individual impact data
+// Impact class to store individual impact data
 class Impact {
   List<double> impactArray;
   double impactStrength;
   double impactRotation;
   double maxRotation;
+  bool isSweetSpot; // new field to save the sweet spot hit
 
   Impact({
     required this.impactArray,
     required this.impactStrength,
     required this.impactRotation,
     required this.maxRotation,
+    required this.isSweetSpot,
   });
 
   Map<String, dynamic> toJson() => {
@@ -20,6 +23,7 @@ class Impact {
         "impactStrength": impactStrength,
         "impactRotation": impactRotation,
         "maxRotation": maxRotation,
+        "isSweetSpot": isSweetSpot, // include the new field
       };
 
   factory Impact.fromJson(Map<String, dynamic> json) => Impact(
@@ -27,6 +31,7 @@ class Impact {
         impactStrength: (json["impactStrength"] as num?)?.toDouble() ?? 0.0,
         impactRotation: (json["impactRotation"] as num?)?.toDouble() ?? 0.0,
         maxRotation: (json["maxRotation"] as num?)?.toDouble() ?? 0.0,
+        isSweetSpot: json["isSweetSpot"] ?? false, // default to false if not present
       );
 }
 
@@ -153,8 +158,7 @@ Future<void> deleteSession(int index) async {
 
       Match? impactMatch = impactRegex.firstMatch(fileContent.substring(currentIndex));
       if (impactMatch != null) {
-        print("Impact data found for session $sessionNumber");
-
+        // Extract parsed values
         String impactArrayStr = impactMatch.group(1) ?? "";
         List<double> impactArray = impactArrayStr.isNotEmpty
             ? impactArrayStr.split(',').map((e) => double.tryParse(e.trim()) ?? 0.0).toList()
@@ -164,14 +168,17 @@ Future<void> deleteSession(int index) async {
         double impactRotation = double.tryParse(impactMatch.group(3) ?? "0.0") ?? 0.0;
         double maxRotation = double.tryParse(impactMatch.group(4) ?? "0.0") ?? 0.0;
 
-        currentImpacts.add(
-          Impact(
-            impactArray: impactArray,
-            impactStrength: impactStrength,
-            impactRotation: impactRotation,
-            maxRotation: maxRotation,
-          ),
+        // Create the impact with a temporary value then compute its sweet spot
+        final tempImpact = Impact(
+          impactArray: impactArray,
+          impactStrength: impactStrength,
+          impactRotation: impactRotation,
+          maxRotation: maxRotation,
+          isSweetSpot: false, // temporary placeholder
         );
+        // Compute the sweet spot value using your sweet spot logic
+        tempImpact.isSweetSpot = isSweetSpot(tempImpact);
+        currentImpacts.add(tempImpact);
 
         currentIndex += impactMatch.end;
         continue;

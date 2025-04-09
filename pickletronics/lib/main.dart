@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pickletronics/viewSessions/SessionsTab.dart';
 import 'StartGame/start_game_view.dart';
 import 'package:logger/logger.dart';
+import 'insightsTab/insights_tab.dart';
 
 final Logger _logger = Logger();
 
@@ -79,16 +80,16 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
         controller: _tabController,
         children: const [
           StartGameView(),
-          Center(child: Text('Recommendations')),
           SessionsTab(),
+          InsightsTab(),
         ],
       ),
       bottomNavigationBar: TabBar(
         controller: _tabController,
         tabs: const [
           Tab(icon: Icon(Icons.sports_tennis), text: 'Dashboard'),
-          Tab(icon: Icon(Icons.read_more), text: 'Insights'),
           Tab(icon: Icon(Icons.analytics_outlined), text: 'Sessions'),
+          Tab(icon: Icon(Icons.read_more), text: 'Insights'),
         ],
         labelColor: Colors.black,
         unselectedLabelColor: Colors.grey,
