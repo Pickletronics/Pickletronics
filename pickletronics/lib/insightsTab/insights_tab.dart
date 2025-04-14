@@ -19,6 +19,75 @@ class _InsightsTabState extends State<InsightsTab> {
     _loadSessions();
   }
 
+  void _showSessionsForSpinCategory(int categoryIndex) {
+  double minRotation, maxRotation;
+  String categoryName;
+
+  switch (categoryIndex) {
+    case 0:
+      minRotation = 0.0;
+      maxRotation = 75.0;
+      categoryName = "0-75°/s";
+      break;
+    case 1:
+      minRotation = 76.0;
+      maxRotation = 150.0;
+      categoryName = "76-150°/s";
+      break;
+    case 2:
+      minRotation = 151.0;
+      maxRotation = 225.0;
+      categoryName = "151-225°/s";
+      break;
+    case 3:
+      minRotation = 226.0;
+      maxRotation = 360.0;
+      categoryName = "226-360°/s";
+      break;
+    default:
+      return;
+  }
+
+  // Find sessions that have impacts within the selected range.
+  List<String> matchingSessions = [];
+  for (int i = 0; i < allSessions.length; i++) {
+    final session = allSessions[i];
+    int count = session.impacts.where((impact) =>
+        impact.impactRotation >= minRotation &&
+        impact.impactRotation <= maxRotation).length;
+    if (count > 0) {
+      matchingSessions.add("Session ${i + 1}: $count ${count == 1 ? 'hit' : 'hits'}");
+    }
+  }
+
+  // Prepare dialog content.
+  String dialogContent;
+  if (matchingSessions.isEmpty) {
+    dialogContent = "No sessions found with hits in the $categoryName range.";
+  } else {
+    dialogContent = matchingSessions.join("\n");
+  }
+
+  // Show the results in an AlertDialog.
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Sessions for $categoryName"),
+        content: Text(dialogContent),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   Future<void> _loadSessions() async {
     List<Session> sessions = await SessionParser().loadSessions();
     setState(() {
@@ -257,62 +326,75 @@ Widget _buildHighSpinShotsCard() {
     ),
   ];
 
-return Card(
-  elevation: 3,
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  child: Stack(
-    children: [
-      Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "High Spin Shots",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "You've hit a total of \n$highSpinShotsValue high-spin shots!",
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "High Spin Shots",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "You've hit a total of \n$highSpinShotsValue high-spin shots!",
+                style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 200,
+                child: PieChart(
+                  PieChartData(
+                    pieTouchData: PieTouchData(
+                      touchCallback: (FlTouchEvent event, PieTouchResponse? pieTouchResponse) {
+                        // Only process tap events (and avoid hover/move events)
+                        if (!event.isInterestedForInteractions ||
+                            pieTouchResponse == null ||
+                            pieTouchResponse.touchedSection == null) {
+                          return;
+                        }
+                        // Get the index of the touched section.
+                        final int tappedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                        _showSessionsForSpinCategory(tappedIndex);
+                      },
+                    ),
+                    sections: sections,
+                    centerSpaceRadius: 40,
+                    sectionsSpace: 2,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                _buildLegendItem(Colors.blue, "0-75°/s"),
-                _buildLegendItem(Colors.orange, "76-150°/s"),
-                _buildLegendItem(Color.fromARGB(255, 107, 214, 139), "151-225°/s"),
-                _buildLegendItem(Color.fromARGB(255, 231, 80, 82), "226-360°/s"),
-              ],
-            ),
-          ],
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  _buildLegendItem(Colors.blue, "0-75°/s"),
+                  _buildLegendItem(Colors.orange, "76-150°/s"),
+                  _buildLegendItem(const Color.fromARGB(255, 107, 214, 139), "151-225°/s"),
+                  _buildLegendItem(const Color.fromARGB(255, 231, 80, 82), "226-360°/s"),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      Positioned(
-        top: 8,
-        right: 8,
-        child: Image.asset(
-          'assets/spin_shot.png',
-          width: 100,
-          height: 100,
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Image.asset(
+            'assets/spin_shot.png',
+            width: 100,
+            height: 100,
+          ),
         ),
-      ),
-    ],
-  ),
-);
+      ],
+    ),
+  );
 }
 
 Widget _buildLegendItem(Color color, String text) {
