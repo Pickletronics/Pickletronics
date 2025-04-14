@@ -10,11 +10,6 @@ class SessionDetailsPage extends StatelessWidget {
   const SessionDetailsPage({Key? key, required this.session, required this.displayedSessionNumber})
       : super(key: key);
 
-  // Placeholder sweet spot criteria; always returns true for now
-  bool isSweetSpot(Impact impact) {
-    return true; // Replace with ML model in the future
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +52,7 @@ class SessionDetailsPage extends StatelessWidget {
                 return ImpactCardWithGraph(
                   impact: impact,
                   impactNumber: index,
-                  isSweetSpot: impact.isSweetSpot, // use the saved value
+                  isSweetSpot: impact.isSweetSpot,
                 );
               }).toList(),
             ),
@@ -82,6 +77,9 @@ class ImpactCardWithGraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Color indicatorColor = isSweetSpot ? Colors.green.shade700 : Colors.red.shade700;
+    final String indicatorText = isSweetSpot ? 'Sweet Spot Hit' : 'Off-Center Hit';
+    final IconData indicatorIcon = isSweetSpot ? Icons.check_circle : Icons.cancel;
     return Card(
       elevation: 2,
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -125,27 +123,27 @@ class ImpactCardWithGraph extends StatelessWidget {
               ],
             ),
             // Sweet Spot indicator
-            if (isSweetSpot)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green.shade700, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Sweet Spot Hit',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green.shade700,
-                        ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Use the variables defined above based on isSweetSpot
+                    Icon(indicatorIcon, color: indicatorColor, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      indicatorText, // Use the determined text
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: indicatorColor, // Use the determined color
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
+            ),
             // ImpactGraph widget with fixed graph height (chart remains 220)
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
@@ -179,7 +177,7 @@ class ImpactCardWithGraph extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: Colors.grey[600] ?? Colors.grey,
           ),
         ),
       ],
@@ -250,6 +248,7 @@ class ImpactGraph extends StatelessWidget {
           enabled: true,
           touchTooltipData: LineTouchTooltipData(
             tooltipBgColor: color.withOpacity(0.8),
+            // Using tooltipBgColor instead of getTooltipColor
             tooltipRoundedRadius: 8,
             getTooltipItems: (List<LineBarSpot> touchedSpots) {
               return touchedSpots.map((spot) {
@@ -297,7 +296,7 @@ class ImpactGraph extends StatelessWidget {
                   child: Text(
                     value.toInt().toString(),
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: Colors.grey[600] ?? Colors.grey,
                       fontSize: 11,
                     ),
                   ),
@@ -311,11 +310,12 @@ class ImpactGraph extends StatelessWidget {
               reservedSize: 32,
               interval: range / 4,
               getTitlesWidget: (value, meta) {
-                if (value == minY || value % (range / 2) < 0.1 || value == maxY || value == 0) {
+                if (value == minY || value % (range / 2) < 0.1 ||
+                    value == maxY || value == 0) {
                   return Text(
                     value.toInt().toString(),
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: Colors.grey[600] ?? Colors.grey,
                       fontSize: 11,
                     ),
                   );
