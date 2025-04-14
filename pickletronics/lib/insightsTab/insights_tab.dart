@@ -11,6 +11,8 @@ class InsightsTab extends StatefulWidget {
 
 class _InsightsTabState extends State<InsightsTab> {
   List<Session> allSessions = [];
+  int _currentSessionIndex = 0;
+  int _sweetSpotPageIndex = 0;
 
   @override
   void initState() {
@@ -18,10 +20,82 @@ class _InsightsTabState extends State<InsightsTab> {
     _loadSessions();
   }
 
+  void _showSessionsForSpinCategory(int categoryIndex) {
+  double minRotation, maxRotation;
+  String categoryName;
+
+  switch (categoryIndex) {
+    case 0:
+      minRotation = 0.0;
+      maxRotation = 75.0;
+      categoryName = "0-75°/s";
+      break;
+    case 1:
+      minRotation = 76.0;
+      maxRotation = 150.0;
+      categoryName = "76-150°/s";
+      break;
+    case 2:
+      minRotation = 151.0;
+      maxRotation = 225.0;
+      categoryName = "151-225°/s";
+      break;
+    case 3:
+      minRotation = 226.0;
+      maxRotation = 360.0;
+      categoryName = "226-360°/s";
+      break;
+    default:
+      return;
+  }
+
+  // Find sessions that have impacts within the selected range.
+  List<String> matchingSessions = [];
+  for (int i = 0; i < allSessions.length; i++) {
+    final session = allSessions[i];
+    int count = session.impacts.where((impact) =>
+        impact.impactRotation >= minRotation &&
+        impact.impactRotation <= maxRotation).length;
+    if (count > 0) {
+      matchingSessions.add("Session ${i + 1}: $count ${count == 1 ? 'hit' : 'hits'}");
+    }
+  }
+
+  // Prepare dialog content.
+  String dialogContent;
+  if (matchingSessions.isEmpty) {
+    dialogContent = "No sessions found with hits in the $categoryName range.";
+  } else {
+    dialogContent = matchingSessions.join("\n");
+  }
+
+  // Show the results in an AlertDialog.
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("Sessions for $categoryName"),
+        content: Text(dialogContent),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
   Future<void> _loadSessions() async {
     List<Session> sessions = await SessionParser().loadSessions();
     setState(() {
       allSessions = sessions;
+      if (_currentSessionIndex >= sessions.length) {
+        _currentSessionIndex = sessions.isEmpty ? 0 : sessions.length - 1;
+      }
     });
   }
 
@@ -81,7 +155,6 @@ Widget _buildGoodHitCardWithBarChart(double overallPercentage) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top section: Good Hit % info
           Row(
             children: [
               Image.asset("assets/bullseye_icon.png", width: 50, height: 50),
@@ -93,14 +166,12 @@ Widget _buildGoodHitCardWithBarChart(double overallPercentage) {
                       style: const TextStyle(fontSize: 24)),
                   const SizedBox(height: 8),
                   const Text("Total Sweet Spot Hits",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Bottom section: Bar Chart showing last 5 sessions
           _buildLastSessionsBarChartContent(),
         ],
       ),
@@ -109,18 +180,21 @@ Widget _buildGoodHitCardWithBarChart(double overallPercentage) {
 }
 
 Widget _buildLastSessionsBarChartContent() {
-  // Determine how many sessions to display (up to 5)
-  final int count = allSessions.length >= 5 ? 5 : allSessions.length;
-  // Sort sessions by timestamp (oldest first)
+  const int pageSize = 5;
+  // Sort sessions with most recent first.
   List<Session> sortedSessions = List.from(allSessions)
-    ..sort((a, b) => a.timestamp!.compareTo(b.timestamp!));
-  final List<Session> lastSessions =
-      sortedSessions.sublist(sortedSessions.length - count);
+    ..sort((a, b) => b.timestamp!.compareTo(a.timestamp!));
+  final int totalPages = (sortedSessions.length + pageSize - 1) ~/ pageSize;
+  final int startIndex = _sweetSpotPageIndex * pageSize;
+  final int endIndex = (startIndex + pageSize) > sortedSessions.length 
+      ? sortedSessions.length 
+      : startIndex + pageSize;
+  final List<Session> pageSessions = sortedSessions.sublist(startIndex, endIndex);
 
-  // Create a BarChartGroupData for each session
+  // Build the bar chart groups from the sessions on this page.
   List<BarChartGroupData> barGroups = [];
-  for (int i = 0; i < lastSessions.length; i++) {
-    final session = lastSessions[i];
+  for (int i = 0; i < pageSessions.length; i++) {
+    final session = pageSessions[i];
     int total = session.impacts.length;
     int sweet = session.impacts.where((impact) => impact.isSweetSpot).length;
     double perc = total > 0 ? sweet / total * 100 : 0;
@@ -139,60 +213,91 @@ Widget _buildLastSessionsBarChartContent() {
     );
   }
 
-  return SizedBox(
-    height: 275,
-    child: Padding(
-      padding: const EdgeInsets.only(left: 4.0, top: 12.0, right: 12.0, bottom: 12.0),
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: 100,
-          barGroups: barGroups,
-          titlesData: FlTitlesData(
-            show: true,
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              axisNameWidget: const Text(
-                "Most Recent Sessions",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (double value, TitleMeta meta) {
-                  return Text('S${value.toInt() + 1}');
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              axisNameSize: 40,
-              axisNameWidget: Padding(
-                padding: const EdgeInsets.only(bottom: 1.0),
-                child: const Text(
-                  "Sweet Spot Hit Percentage (%)",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+  return Column(
+    children: [
+      SizedBox(
+        height: 275,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 4.0, top: 12.0, right: 12.0, bottom: 12.0),
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: 100,
+              barGroups: barGroups,
+              titlesData: FlTitlesData(
+                show: true,
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  axisNameWidget: const Text(
+                    "Sessions",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (double value, TitleMeta meta) {
+                      final int globalIndex = startIndex + value.toInt();
+                      return Text('S${globalIndex + 1}');
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  axisNameSize: 40,
+                  axisNameWidget: Padding(
+                    padding: const EdgeInsets.only(bottom: 1.0),
+                    child: const Text(
+                      "Sweet Spot Hit %",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 80,
+                    interval: 20,
+                    getTitlesWidget: (double value, TitleMeta meta) {
+                      return Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16.0),
+                        child: Text('${value.toInt()}%'),
+                      );
+                    },
+                  ),
                 ),
               ),
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 80,
-                interval: 20,
-                getTitlesWidget: (double value, TitleMeta meta) {
-                  return Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: Text('${value.toInt()}%'),
-                  );
-                },
-              ),
+              borderData: FlBorderData(show: false),
+              gridData: FlGridData(show: true),
             ),
           ),
-          borderData: FlBorderData(show: false),
-          gridData: FlGridData(show: true),
         ),
       ),
-    ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _sweetSpotPageIndex > 0
+                ? () {
+                    setState(() {
+                      _sweetSpotPageIndex--;
+                    });
+                  }
+                : null,
+          ),
+          Text('Page ${_sweetSpotPageIndex + 1} of $totalPages'),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            onPressed: _sweetSpotPageIndex < totalPages - 1
+                ? () {
+                    setState(() {
+                      _sweetSpotPageIndex++;
+                    });
+                  }
+                : null,
+          ),
+        ],
+      ),
+    ],
   );
 }
 
@@ -253,62 +358,75 @@ Widget _buildHighSpinShotsCard() {
     ),
   ];
 
-return Card(
-  elevation: 3,
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  child: Stack(
-    children: [
-      Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "High Spin Shots",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "You've hit a total of \n$highSpinShotsValue high-spin shots!",
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
+  return Card(
+    elevation: 3,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "High Spin Shots",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "You've hit a total of \n$highSpinShotsValue high-spin shots!",
+                style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 200,
+                child: PieChart(
+                  PieChartData(
+                    pieTouchData: PieTouchData(
+                      touchCallback: (FlTouchEvent event, PieTouchResponse? pieTouchResponse) {
+                        // Only process tap events (and avoid hover/move events)
+                        if (!event.isInterestedForInteractions ||
+                            pieTouchResponse == null ||
+                            pieTouchResponse.touchedSection == null) {
+                          return;
+                        }
+                        // Get the index of the touched section.
+                        final int tappedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                        _showSessionsForSpinCategory(tappedIndex);
+                      },
+                    ),
+                    sections: sections,
+                    centerSpaceRadius: 40,
+                    sectionsSpace: 2,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                _buildLegendItem(Colors.blue, "0-75°/s"),
-                _buildLegendItem(Colors.orange, "76-150°/s"),
-                _buildLegendItem(Color.fromARGB(255, 107, 214, 139), "151-225°/s"),
-                _buildLegendItem(Color.fromARGB(255, 231, 80, 82), "226-360°/s"),
-              ],
-            ),
-          ],
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  _buildLegendItem(Colors.blue, "0-75°/s"),
+                  _buildLegendItem(Colors.orange, "76-150°/s"),
+                  _buildLegendItem(const Color.fromARGB(255, 107, 214, 139), "151-225°/s"),
+                  _buildLegendItem(const Color.fromARGB(255, 231, 80, 82), "226-360°/s"),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-      Positioned(
-        top: 8,
-        right: 8,
-        child: Image.asset(
-          'assets/spin_shot.png',
-          width: 100,
-          height: 100,
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Image.asset(
+            'assets/spin_shot.png',
+            width: 100,
+            height: 100,
+          ),
         ),
-      ),
-    ],
-  ),
-);
+      ],
+    ),
+  );
 }
 
 Widget _buildLegendItem(Color color, String text) {
@@ -323,12 +441,12 @@ Widget _buildLegendItem(Color color, String text) {
 }
 
 Widget _buildStrongestShotCard() {
-  // Calculate the maximum swing strength across all sessions.
-  double strongestShotValue = 0.0;
-  for (final session in allSessions) {
-    for (final impact in session.impacts) {
-      if (impact.impactStrength > strongestShotValue) {
-        strongestShotValue = impact.impactStrength;
+  double currentSessionStrongest = 0.0;
+  if (allSessions.isNotEmpty) {
+    final currentSession = allSessions[_currentSessionIndex];
+    for (final impact in currentSession.impacts) {
+      if (impact.impactStrength > currentSessionStrongest) {
+        currentSessionStrongest = impact.impactStrength;
       }
     }
   }
@@ -347,10 +465,42 @@ Widget _buildStrongestShotCard() {
                 "Strongest Shot",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+              allSessions.isNotEmpty
+                  ? Text(
+                      "Session ${_currentSessionIndex + 1} of ${allSessions.length}",
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    )
+                  : const SizedBox(),
               const SizedBox(height: 8),
               Text(
-                "${strongestShotValue.toStringAsFixed(1)} g",
+                "${currentSessionStrongest.toStringAsFixed(1)} N",
                 style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _currentSessionIndex > 0
+                        ? () {
+                            setState(() {
+                              _currentSessionIndex--;
+                            });
+                          }
+                        : null,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: _currentSessionIndex < allSessions.length - 1
+                        ? () {
+                            setState(() {
+                              _currentSessionIndex++;
+                            });
+                          }
+                        : null,
+                  ),
+                ],
               ),
             ],
           ),
