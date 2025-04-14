@@ -12,6 +12,7 @@ class InsightsTab extends StatefulWidget {
 class _InsightsTabState extends State<InsightsTab> {
   List<Session> allSessions = [];
   int _currentSessionIndex = 0;
+  int _sweetSpotPageIndex = 0;
 
   @override
   void initState() {
@@ -154,7 +155,6 @@ Widget _buildGoodHitCardWithBarChart(double overallPercentage) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top section: Good Hit % info
           Row(
             children: [
               Image.asset("assets/bullseye_icon.png", width: 50, height: 50),
@@ -166,14 +166,12 @@ Widget _buildGoodHitCardWithBarChart(double overallPercentage) {
                       style: const TextStyle(fontSize: 24)),
                   const SizedBox(height: 8),
                   const Text("Total Sweet Spot Hits",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Bottom section: Bar Chart showing last 5 sessions
           _buildLastSessionsBarChartContent(),
         ],
       ),
@@ -182,18 +180,21 @@ Widget _buildGoodHitCardWithBarChart(double overallPercentage) {
 }
 
 Widget _buildLastSessionsBarChartContent() {
-  // Determine how many sessions to display (up to 5)
-  final int count = allSessions.length >= 5 ? 5 : allSessions.length;
-  // Sort sessions by timestamp (oldest first)
+  const int pageSize = 5;
+  // Sort sessions with most recent first.
   List<Session> sortedSessions = List.from(allSessions)
-    ..sort((a, b) => a.timestamp!.compareTo(b.timestamp!));
-  final List<Session> lastSessions =
-      sortedSessions.sublist(sortedSessions.length - count);
+    ..sort((a, b) => b.timestamp!.compareTo(a.timestamp!));
+  final int totalPages = (sortedSessions.length + pageSize - 1) ~/ pageSize;
+  final int startIndex = _sweetSpotPageIndex * pageSize;
+  final int endIndex = (startIndex + pageSize) > sortedSessions.length 
+      ? sortedSessions.length 
+      : startIndex + pageSize;
+  final List<Session> pageSessions = sortedSessions.sublist(startIndex, endIndex);
 
-  // Create a BarChartGroupData for each session
+  // Build the bar chart groups from the sessions on this page.
   List<BarChartGroupData> barGroups = [];
-  for (int i = 0; i < lastSessions.length; i++) {
-    final session = lastSessions[i];
+  for (int i = 0; i < pageSessions.length; i++) {
+    final session = pageSessions[i];
     int total = session.impacts.length;
     int sweet = session.impacts.where((impact) => impact.isSweetSpot).length;
     double perc = total > 0 ? sweet / total * 100 : 0;
@@ -212,60 +213,91 @@ Widget _buildLastSessionsBarChartContent() {
     );
   }
 
-  return SizedBox(
-    height: 275,
-    child: Padding(
-      padding: const EdgeInsets.only(left: 4.0, top: 12.0, right: 12.0, bottom: 12.0),
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          maxY: 100,
-          barGroups: barGroups,
-          titlesData: FlTitlesData(
-            show: true,
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              axisNameWidget: const Text(
-                "Most Recent Sessions",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (double value, TitleMeta meta) {
-                  return Text('S${value.toInt() + 1}');
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              axisNameSize: 40,
-              axisNameWidget: Padding(
-                padding: const EdgeInsets.only(bottom: 1.0),
-                child: const Text(
-                  "Sweet Spot Hit Percentage (%)",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+  return Column(
+    children: [
+      SizedBox(
+        height: 275,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 4.0, top: 12.0, right: 12.0, bottom: 12.0),
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: 100,
+              barGroups: barGroups,
+              titlesData: FlTitlesData(
+                show: true,
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  axisNameWidget: const Text(
+                    "Sessions",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (double value, TitleMeta meta) {
+                      final int globalIndex = startIndex + value.toInt();
+                      return Text('S${globalIndex + 1}');
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  axisNameSize: 40,
+                  axisNameWidget: Padding(
+                    padding: const EdgeInsets.only(bottom: 1.0),
+                    child: const Text(
+                      "Sweet Spot Hit %",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 80,
+                    interval: 20,
+                    getTitlesWidget: (double value, TitleMeta meta) {
+                      return Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 16.0),
+                        child: Text('${value.toInt()}%'),
+                      );
+                    },
+                  ),
                 ),
               ),
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 80,
-                interval: 20,
-                getTitlesWidget: (double value, TitleMeta meta) {
-                  return Container(
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: Text('${value.toInt()}%'),
-                  );
-                },
-              ),
+              borderData: FlBorderData(show: false),
+              gridData: FlGridData(show: true),
             ),
           ),
-          borderData: FlBorderData(show: false),
-          gridData: FlGridData(show: true),
         ),
       ),
-    ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _sweetSpotPageIndex > 0
+                ? () {
+                    setState(() {
+                      _sweetSpotPageIndex--;
+                    });
+                  }
+                : null,
+          ),
+          Text('Page ${_sweetSpotPageIndex + 1} of $totalPages'),
+          IconButton(
+            icon: const Icon(Icons.arrow_forward),
+            onPressed: _sweetSpotPageIndex < totalPages - 1
+                ? () {
+                    setState(() {
+                      _sweetSpotPageIndex++;
+                    });
+                  }
+                : null,
+          ),
+        ],
+      ),
+    ],
   );
 }
 
