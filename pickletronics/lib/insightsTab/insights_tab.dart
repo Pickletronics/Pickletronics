@@ -11,6 +11,7 @@ class InsightsTab extends StatefulWidget {
 
 class _InsightsTabState extends State<InsightsTab> {
   List<Session> allSessions = [];
+  int _currentSessionIndex = 0;
 
   @override
   void initState() {
@@ -22,6 +23,9 @@ class _InsightsTabState extends State<InsightsTab> {
     List<Session> sessions = await SessionParser().loadSessions();
     setState(() {
       allSessions = sessions;
+      if (_currentSessionIndex >= sessions.length) {
+        _currentSessionIndex = sessions.isEmpty ? 0 : sessions.length - 1;
+      }
     });
   }
 
@@ -323,12 +327,12 @@ Widget _buildLegendItem(Color color, String text) {
 }
 
 Widget _buildStrongestShotCard() {
-  // Calculate the maximum swing strength across all sessions.
-  double strongestShotValue = 0.0;
-  for (final session in allSessions) {
-    for (final impact in session.impacts) {
-      if (impact.impactStrength > strongestShotValue) {
-        strongestShotValue = impact.impactStrength;
+  double currentSessionStrongest = 0.0;
+  if (allSessions.isNotEmpty) {
+    final currentSession = allSessions[_currentSessionIndex];
+    for (final impact in currentSession.impacts) {
+      if (impact.impactStrength > currentSessionStrongest) {
+        currentSessionStrongest = impact.impactStrength;
       }
     }
   }
@@ -347,10 +351,42 @@ Widget _buildStrongestShotCard() {
                 "Strongest Shot",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
+              allSessions.isNotEmpty
+                  ? Text(
+                      "Session ${_currentSessionIndex + 1} of ${allSessions.length}",
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    )
+                  : const SizedBox(),
               const SizedBox(height: 8),
               Text(
-                "${strongestShotValue.toStringAsFixed(1)} g",
+                "${currentSessionStrongest.toStringAsFixed(1)} N",
                 style: const TextStyle(fontSize: 24),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _currentSessionIndex > 0
+                        ? () {
+                            setState(() {
+                              _currentSessionIndex--;
+                            });
+                          }
+                        : null,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: _currentSessionIndex < allSessions.length - 1
+                        ? () {
+                            setState(() {
+                              _currentSessionIndex++;
+                            });
+                          }
+                        : null,
+                  ),
+                ],
               ),
             ],
           ),

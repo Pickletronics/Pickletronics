@@ -62,15 +62,14 @@ class StartGameViewState extends State<StartGameView> {
 Widget build(BuildContext context) {
   return Scaffold(
     body: Stack(
-      fit: StackFit.expand, // Ensures background covers entire screen
+      fit: StackFit.expand,
       children: [
         // Background Image
         Image.asset(
-          'assets/background.png', // Change this to your image path
-          fit: BoxFit.cover, // Ensures it fills the entire screen
+          'assets/background.png',
+          fit: BoxFit.cover,
         ),
 
-        // Main content
         Column(
           children: [
           Padding(
