@@ -73,43 +73,60 @@ Widget build(BuildContext context) {
         // Main content
         Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 20),
-              child: Center(
-                child: Card(
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  color: const Color.fromARGB(205, 255, 255, 255),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    height: MediaQuery.of(context).size.height * 0.25,
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Welcome Back!",
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 20),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Text("Total Sessions Recorded: $_totalSessions", style: const TextStyle(fontSize: 18)),
-                              const Text("Average hits per session:", style: TextStyle(fontSize: 18)),
-                              const Text("Average % Sweet Spot Hits:", style: TextStyle(fontSize: 18)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+          Padding(
+            padding: const EdgeInsets.only(top: 20),
+            child: Center(
+              child: Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                color: const Color.fromARGB(205, 255, 255, 255),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.9,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        "Welcome Back!",
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "After recording a session on your pickleball swing tracker, press the scan button below to scan for and connect to your device. After connecting, all recorded data will automatically be uploaded to the 'Sessions' tab.",
+                        style: TextStyle(fontSize: 18),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text("How to Use Attachment"),
+                                content: const Text("1. Turn device on using the switch. This will cause the LED to blink. \n2. Click the button once to enter a play session. The LED will now display the battery status. \n3. Record hits! The LED will blink when a hit has been detected. \n4. Press the button once more to end your play session. \n5. Click the button twice to connect to bluetooth. The LED will blink blue to indicate you are advertising."),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text("OK"),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: const Text("How to Use Attachment"),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
+          ),
 
             // Button and Bluetooth Devices List
             Expanded(
@@ -163,7 +180,7 @@ Widget build(BuildContext context) {
                         : const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20.0),
                           child: Text(
-                            'No devices found. Tap "Pair Device" to scan.',
+                            'No devices found.',
                             style: TextStyle(fontSize: 18),
                             textAlign: TextAlign.center,
                           ),
