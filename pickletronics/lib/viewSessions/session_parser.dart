@@ -11,7 +11,7 @@ class Impact {
   double impactStrength;
   double impactRotation;
   double maxRotation;
-  bool isSweetSpot; // Changed to non-nullable with default value
+  bool isSweetSpot;
 
   Impact({
     required this.impactArray,
@@ -210,7 +210,7 @@ class SessionParser {
           impacts: [],
         );
         currentImpacts = [];
-        currentIndex = sessionMatch.end;
+        currentIndex += sessionMatch.end;
         continue;
       }
 
@@ -260,7 +260,7 @@ class SessionParser {
         }
 
         currentImpacts.add(currentImpact);
-        currentIndex = impactMatch.end;
+        currentIndex += impactMatch.end;
         continue;
       }
 
@@ -275,7 +275,7 @@ class SessionParser {
         }
         currentSession = null;
         currentImpacts = [];
-        currentIndex = endMatch.end;
+        currentIndex += endMatch.end;
         continue;
       }
 
